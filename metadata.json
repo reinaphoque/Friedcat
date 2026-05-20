@@ -1,0 +1,6 @@
+{
+  "name": "Friedcat Portfolio",
+  "description": "An interactive digital art and VTuber design commission portfolio for Friedcat, showcasing services, pricing, and terms of service.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

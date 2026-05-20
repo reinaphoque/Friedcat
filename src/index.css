@@ -1,0 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-brand-red: #9b2335;
+  --color-brand-red-soft: #c0424f;
+  --color-brand-red-btn: #a63245;
+  --color-brand-cream: #f5ede0;
+  --color-brand-white: #ffffff;
+  --color-brand-green: #b5d98a;
+  --color-brand-green-dark: #6fac4e;
+  --color-brand-green-light: #8fc46a;
+  --color-brand-text: #3a1a1a;
+  --color-brand-muted: #9b6060;
+  --color-brand-border: #d4c0b0;
+  
+  --font-fredoka: "Fredoka", sans-serif;
+  --font-nunito: "Nunito", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+body {
+  font-family: var(--font-nunito);
+  background: var(--color-brand-green);
+  color: var(--color-brand-text);
+  min-height: 100vh;
+}
+
+/* Custom scrollbar matching their playful vintage aesthetics */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-brand-cream);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-brand-red-btn);
+  border: 2px solid var(--color-brand-cream);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-brand-red);
+}
+
+/* Wave pattern keyframes & classes for beautiful subtle entry animations */
+@keyframes subtle-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.float-anim {
+  animation: subtle-float 3s ease-in-out infinite;
+}
