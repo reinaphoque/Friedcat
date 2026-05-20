@@ -237,7 +237,14 @@ export default function AdminView({ data, onSave, onNavigateToPortfolio, saving 
   useEffect(() => {
     const handleAuthMessage = (event: MessageEvent) => {
       const origin = event.origin;
-      if (!origin.endsWith(".run.app") && !origin.includes("localhost") && !origin.includes("127.0.0.1")) {
+      const currentOrigin = window.location.origin;
+      if (
+        origin !== currentOrigin &&
+        !origin.endsWith(".run.app") &&
+        !origin.endsWith(".netlify.app") &&
+        !origin.includes("localhost") &&
+        !origin.includes("127.0.0.1")
+      ) {
         return;
       }
 
@@ -286,8 +293,10 @@ export default function AdminView({ data, onSave, onNavigateToPortfolio, saving 
     setAuthError(null);
     try {
       const res = await fetch("/api/auth/bypass", { method: "POST" });
-      if (!res.ok) throw new Error("Bypass validation rejected on server.");
       const sessionData = await res.json();
+      if (!res.ok) {
+        throw new Error(sessionData?.error || "Bypass validation rejected on server.");
+      }
       localStorage.setItem("friedcat_admin_token", sessionData.token);
       localStorage.setItem("friedcat_admin_user", JSON.stringify(sessionData.user));
       setAdminToken(sessionData.token);
