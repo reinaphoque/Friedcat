@@ -1,0 +1,161 @@
+{
+  "name": "Friedcat",
+  "avatarImg": "/uploads/avatarImg_1779311962428.jpeg",
+  "statusIllust": "open",
+  "statusLive2d": "open",
+  "svcIllustThumb": "/uploads/svcIllustThumb_1779311978877.jpeg",
+  "svcYchThumb": "/uploads/svcYchThumb_1779311981785.jpeg",
+  "socials": [
+    {
+      "t": "twitter",
+      "u": "https://x.com/"
+    },
+    {
+      "t": "bluesky",
+      "u": "https://bsky.app/"
+    },
+    {
+      "t": "facebook",
+      "u": "https://facebook.com/"
+    },
+    {
+      "t": "instagram",
+      "u": "https://instagram.com/"
+    }
+  ],
+  "doList": [
+    "Woman / Girl Only",
+    "Fanart",
+    "Humanoids / Fantasy Humanoid",
+    "Soft NSFW (sexy/suggestive/revealing characters)"
+  ],
+  "dontList": [
+    "Furries / Anthros and ponies",
+    "Mecha & Realism",
+    "overly complicated weapons and armours",
+    "Hard NSFW (sexual activity)"
+  ],
+  "illustNote": "The prices listed here are not the final quote and might shift slightly because of the currency exchange rate changes.",
+  "illustStatus": "open",
+  "illustSlides": [
+    "/uploads/illustSlides_1779311990957.jpeg"
+  ],
+  "illustRows": [
+    {
+      "type": "BUST",
+      "rough": "$9+ / ฿300+",
+      "color": "$19+ / ฿600+"
+    },
+    {
+      "type": "HALF BODY",
+      "rough": "$19+ / ฿600+",
+      "color": "$28+ / ฿900+"
+    },
+    {
+      "type": "FULL BODY",
+      "rough": "$25+ / ฿800+",
+      "color": "$37+ / ฿1,200+"
+    }
+  ],
+  "illustExamples": [
+    "/uploads/illustExamples_1779311995825.jpeg",
+    "/uploads/illustExamples_1779311997821.jpeg"
+  ],
+  "ychStatus": "open",
+  "ychNote": "The prices listed here are not the final quote and might shift slightly because of the currency exchange rate changes.",
+  "ychItems": [
+    {
+      "name": "Chibi Sitting YCH",
+      "image": "/uploads/ychItems_1779312003641.jpeg",
+      "desc": "Adorable custom chibi sit template",
+      "price": "$20"
+    },
+    {
+      "name": "Coffee Mug YCH",
+      "image": "/uploads/ychItems_1779312005955.jpeg",
+      "desc": "Cute custom cat-ear peek template on coffee mug props",
+      "price": "$25"
+    }
+  ],
+  "ychExamples": [
+    "/uploads/ychExamples_1779312009628.jpeg",
+    "/uploads/ychExamples_1779312012534.jpeg"
+  ],
+  "vtuberText": "🌟 High-quality customized Live2D structural modeling and rigging. \n\nOur models feature:\n- Complete physical dynamic tracking for hair, garments, and ears\n- Symmetrical high-resolution layer files (.PSD)\n- Ready-made key actions mapped for Twitch, YouTube, and VTube Studio stream environments.",
+  "vtuberMainImg": "/uploads/vtuberMainImg_1779312018828.jpeg",
+  "vtuberExample1": "/uploads/vtuberExample1_1779312021177.jpeg",
+  "vtuberExample2": "/uploads/vtuberExample2_1779312022986.jpeg",
+  "vtuberDesignNote": "I don't do the design",
+  "vtuberPrivacyFee": "Privacy fee 15% of the base price",
+  "vtuberFullbodyRows": [
+    {
+      "type": "Art + Rigging",
+      "price": "$716+ / ฿23,000+"
+    },
+    {
+      "type": "Art only",
+      "price": "$592+ / ฿19,000+"
+    },
+    {
+      "type": "Rigging only",
+      "price": "$405+ / ฿13,000+"
+    }
+  ],
+  "vtuberExtraParts": [
+    {
+      "type": "Animal ears",
+      "art": "$5 / ฿150",
+      "rigging": "$9 / ฿300"
+    },
+    {
+      "type": "Animal tail",
+      "art": "$6+ / ฿200+",
+      "rigging": "$12 / ฿400"
+    },
+    {
+      "type": "Expression",
+      "art": "$2 / ฿50",
+      "rigging": "$3 / ฿100"
+    },
+    {
+      "type": "Animated expression",
+      "art": "$5 / ฿150",
+      "rigging": "$9 / ฿300"
+    },
+    {
+      "type": "Tongue out",
+      "art": "$9 / ฿300",
+      "rigging": "$19 / ฿600"
+    },
+    {
+      "type": "Cheek puff",
+      "art": "-",
+      "rigging": "$3 / ฿100"
+    },
+    {
+      "type": "Second outfit",
+      "art": "$62+ / ฿2,000+",
+      "rigging": "$78+ / ฿2,500+"
+    },
+    {
+      "type": "Extra hairstyle",
+      "art": "$31 / ฿1,000",
+      "rigging": "$31 / ฿1,000"
+    }
+  ],
+  "tos": [
+    "For personal use only Unless you paid for commercial, commercially use will double the final price for illustration",
+    "All the prices listed are starting prices The final price might vary depending on the complexity of the work",
+    "You may NOT alter the commissioned artwork without my consent",
+    "I will not be responsible for any mistakes in the final version of any commission due to incorrect or missing information. It is the commissioner's responsibility to provide all relevant information when requesting a commission",
+    "Full Payment must be sent upfront only when I have confirmed your commission."
+  ],
+  "imageStyles": {
+    "avatarImg": {
+      "scale": 131,
+      "posX": 49,
+      "posY": 40,
+      "fit": "cover"
+    }
+  }
+}

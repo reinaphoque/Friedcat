@@ -2,7 +2,14 @@ const path = require("path");
 const fs = require("fs");
 const { ensureAuth, ensureSiteId, urlBase } = require("./netlifyHelpers.cjs");
 
-const DEFAULT_PORTFOLIO = require(path.join(__dirname, "..", "..", "..", "data", "portfolio.json"));
+const DEFAULT_PORTFOLIO_PATH = path.join(__dirname, "defaultPortfolio.json");
+let DEFAULT_PORTFOLIO = {};
+try {
+  DEFAULT_PORTFOLIO = JSON.parse(fs.readFileSync(DEFAULT_PORTFOLIO_PATH, "utf8"));
+} catch (err) {
+  console.error("Failed to load default portfolio fallback:", err);
+  DEFAULT_PORTFOLIO = {};
+}
 
 const fetchJson = async (url, options = {}) => {
   const res = await fetch(url, options);
