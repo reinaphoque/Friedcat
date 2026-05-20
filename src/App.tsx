@@ -2,9 +2,10 @@ import React, { useState, useEffect } from "react";
 import PortfolioView from "./components/PortfolioView";
 import AdminView from "./components/AdminView";
 import { PortfolioData } from "./types";
+import portfolioJson from "../data/portfolio.json";
 
 export default function App() {
-  const [data, setData] = useState<PortfolioData | null>(null);
+  const [data, setData] = useState<PortfolioData | null>(portfolioJson as PortfolioData);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -26,12 +27,13 @@ export default function App() {
     try {
       const response = await fetch("/api/portfolio");
       if (!response.ok) {
-        throw new Error("Could not access express database file");
+        throw new Error(`Could not access portfolio API: ${response.status} ${response.statusText}`);
       }
       const fetchedJson = await response.json();
       setData(fetchedJson);
     } catch (err) {
       console.error("Database connection failed:", err);
+      // Keep the local fallback portfolio data so the page still renders.
     } finally {
       setLoading(false);
     }
