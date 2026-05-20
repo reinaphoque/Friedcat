@@ -61,10 +61,9 @@ const createSiteAsset = async (name, buffer, contentType, visibility = "public")
   Object.entries(form.fields).forEach(([key, value]) => {
     formData.append(key, value);
   });
-  formData.append("file", buffer, {
-    filename: name,
-    contentType,
-  });
+
+  const fileBlob = new Blob([buffer], { type: contentType });
+  formData.append("file", fileBlob, name);
 
   const uploadRes = await fetch(form.url, {
     method: "POST",
