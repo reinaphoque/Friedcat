@@ -39,7 +39,7 @@ const ensureSiteId = () => {
   return siteId;
 };
 
-const urlBase = "https://api.netlify.com/api/v1";
+const urlBase = "https://api.netlify.com";
 
 const createJsonResponse = (statusCode, body) => ({
   statusCode,

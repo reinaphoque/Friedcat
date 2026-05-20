@@ -1,5 +1,5 @@
 const { createJsonResponse } = require("./lib/netlifyHelpers.cjs");
-const { uploadBase64Image } = require("./lib/netlifyStorage.cjs");
+const { connectBlobs, uploadBase64Image } = require("./lib/netlifyStorage.cjs");
 const { verifySession } = require("./lib/netlifyHelpers.cjs");
 
 const handler = async (event) => {
@@ -19,8 +19,9 @@ const handler = async (event) => {
       return createJsonResponse(400, { error: "No image payload present." });
     }
 
+    connectBlobs(event);
     const asset = await uploadBase64Image(image, name || "upload");
-    return createJsonResponse(200, { url: asset.url });
+    return createJsonResponse(200, { url: `/api/blob?key=${encodeURIComponent(asset.key)}` });
   } catch (error) {
     console.error("Upload function error:", error);
     return createJsonResponse(500, { error: error.message || "Could not save uploaded image." });

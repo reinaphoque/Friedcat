@@ -1,10 +1,11 @@
 const { createJsonResponse } = require("./lib/netlifyHelpers.cjs");
-const { getPortfolioData, savePortfolioData } = require("./lib/netlifyStorage.cjs");
+const { connectBlobs, getPortfolioData, savePortfolioData } = require("./lib/netlifyStorage.cjs");
 const { verifySession } = require("./lib/netlifyHelpers.cjs");
 
 const handler = async (event) => {
   try {
     if (event.httpMethod === "GET") {
+      connectBlobs(event);
       const data = await getPortfolioData();
       return createJsonResponse(200, data);
     }
@@ -19,11 +20,12 @@ const handler = async (event) => {
         }
       }
 
+      connectBlobs(event);
       const payload = JSON.parse(event.body || "{}");
       await savePortfolioData(payload);
       return createJsonResponse(200, {
         success: true,
-        message: "Portfolio config successfully persisted to Netlify storage!",
+        message: "Portfolio config successfully persisted to Netlify Blobs storage!",
       });
     }
 
