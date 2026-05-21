@@ -12,10 +12,14 @@ const handler = async (event) => {
     });
 
     const requiresAuth = !!(process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET);
+    console.log("Auth check", { requiresAuth, discordConfigured: !!process.env.DISCORD_CLIENT_ID });
     if (requiresAuth) {
       const token = event.headers["x-admin-token"] || event.headers["authorization"];
+      console.log("Verifying session token:", { tokenPresent: !!token, tokenLength: token?.length || 0 });
       const session = verifySession(token);
+      console.log("Session verification result:", { valid: !!session, userId: session?.userId });
       if (!session) {
+        console.log("Session invalid, returning 401");
         return createJsonResponse(401, { error: "Unauthorized upload." });
       }
     }
@@ -39,8 +43,13 @@ const handler = async (event) => {
     }
 
     console.log("Attempting to connect Netlify Blobs...");
-    connectBlobs(event);
-    console.log("Netlify Blobs connected, uploading image...");
+    try {
+      connectBlobs(event);
+      console.log("Netlify Blobs connected, uploading image...");
+    } catch (blobConnErr) {
+      console.error("Blobs connection failed:", blobConnErr.message);
+      throw blobConnErr;
+    }
     const asset = await uploadBase64Image(image, name || "upload");
     const elapsed = Date.now() - startTime;
     console.log("Image uploaded successfully", {
