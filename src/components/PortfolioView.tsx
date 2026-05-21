@@ -412,7 +412,7 @@ export default function PortfolioView({ data, loading, onNavigateToAdmin }: Port
                     {data.illustNote}
                   </p>
                 )}
-                <div className="bg-[#fde8e8] border border-brand-red-soft/30 text-brand-red text-[11px] font-bold px-3.5 py-1 px-4 py-1.5 rounded-full mb-3 uppercase tracking-wider text-center">
+                <div className="bg-[#fde8e8] border border-brand-red-soft/30 text-brand-red text-[11px] font-bold px-4 py-1.5 rounded-full mb-3 uppercase tracking-wider text-center">
                   ⚡ Commercial Fee is (X2 of the total invoice)
                 </div>
                 <div className="flex items-center gap-2 text-xs font-bold text-brand-text mb-4">
@@ -541,19 +541,19 @@ export default function PortfolioView({ data, loading, onNavigateToAdmin }: Port
               {/* Interactive YCH listing nodes */}
               <div className="space-y-4 divide-y divide-brand-border/20">
                 {data.ychItems && data.ychItems.map((ych, idx) => (
-                  <div key={idx} className="flex flex-col sm:flex-row gap-5 pt-6 first:pt-0 items-start sm:items-center">
-                    <div 
+                  <div key={idx} className="flex flex-col sm:flex-row gap-5 pt-6 first:pt-0 items-center sm:items-start">
+                    <div
                       onClick={() => ych.image && setSelectedYchImage(ych.image)}
-                      className={`shrink-0 bg-brand-cream border-3 border-brand-border rounded-2xl overflow-hidden shadow-md flex items-center justify-center relative hover:scale-[1.03] transition-transform duration-300 group/ychimg ${ych.image ? 'cursor-zoom-in' : ''}`}
-                      style={{ width: "250px", height: "250px" }}
+                      className={`shrink-0 bg-brand-cream border-[3px] border-brand-border rounded-2xl overflow-hidden shadow-md flex items-center justify-center relative hover:scale-[1.03] transition-transform duration-300 group/ychimg ${ych.image ? 'cursor-zoom-in' : ''}`}
+                      style={{ width: "220px", height: "220px" }}
                     >
                       {ych.image ? (
                         <>
-                          <img 
-                            src={ych.image} 
-                            alt={ych.name} 
-                            referrerPolicy="no-referrer" 
-                            className="w-full h-full" 
+                          <img
+                            src={ych.image}
+                            alt={ych.name}
+                            referrerPolicy="no-referrer"
+                            className="w-full h-full"
                             style={getImageStyleHelper(data.imageStyles?.[`ych_${idx}`])}
                           />
                           <div className="absolute inset-x-0 bottom-3 flex justify-center opacity-0 group-hover/ychimg:opacity-100 transition-opacity duration-200 pointer-events-none">
@@ -566,15 +566,9 @@ export default function PortfolioView({ data, loading, onNavigateToAdmin }: Port
                         <span className="text-5xl text-brand-red-soft/40">&#127912;</span>
                       )}
                     </div>
-                    
-                    <div 
-                      className="flex-1 space-y-1.5"
-                      style={{ paddingLeft: "1px", marginLeft: "0px", marginTop: "-160px" }}
-                    >
-                      <h4 
-                        className="font-fredoka text-brand-red leading-tight uppercase font-black"
-                        style={{ fontSize: "25px" }}
-                      >
+
+                    <div className="flex-1 space-y-2 text-center sm:text-left">
+                      <h4 className="font-fredoka text-[22px] text-brand-red leading-tight uppercase font-black">
                         {ych.name}
                       </h4>
                       <p className="text-xs sm:text-sm text-[#5C4D4D] font-bold leading-relaxed whitespace-pre-wrap">

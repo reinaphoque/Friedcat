@@ -1,36 +1,56 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# Friedcat Portfolio
 
-# Run and deploy your AI Studio app
-
-This contains everything you need to run your app locally.
-
-View your app in AI Studio: https://ai.studio/apps/d0fbf5b4-3e7b-4e95-a51f-1254e89d0d6a
+Commission portfolio for Friedcat — digital art and VTuber (Live2D) design services.
 
 ## Run Locally
 
-**Prerequisites:**  Node.js
+**Prerequisites:** Node.js 18+
 
 1. Install dependencies:
-   `npm install`
-2. Copy `.env.example` to `.env` and set your environment values.
-3. Run the app locally:
-   `npm run dev`
+   ```bash
+   npm install
+   ```
+2. Copy `.env.example` to `.env` and fill in your values:
+   ```bash
+   cp .env.example .env
+   ```
+3. Run the dev server (Express + Vite on port 3000):
+   ```bash
+   npm run dev
+   ```
 
-## Deploy on Netlify
+## Deploy on Vercel
 
-This project is now configured to run on Netlify using Netlify Functions for backend storage.
-
-1. Add the following environment variables in your Netlify site settings:
-   - `APP_URL`: `https://<your-netlify-site>.netlify.app`
+1. Push this repo to GitHub.
+2. Import the project on [vercel.com](https://vercel.com).
+3. Add the following environment variables in your Vercel project settings:
+   - `APP_URL` — your Vercel deployment URL (e.g. `https://your-project.vercel.app`)
    - `DISCORD_CLIENT_ID`
    - `DISCORD_CLIENT_SECRET`
-   - `DISCORD_ALLOWED_USERS`
-   - `ADMIN_SESSION_SECRET`
-   - `NETLIFY_AUTH_TOKEN`
-2. Set your Discord app redirect URI to:
-   `https://<your-netlify-site>.netlify.app/api/auth/discord/callback`
-3. Deploy the repo to Netlify.
+   - `DISCORD_ALLOWED_USERS` — comma-separated Discord usernames/IDs allowed as admins
+   - `ADMIN_SESSION_SECRET` — long random string for signing session tokens
+   - `CLOUDINARY_CLOUD_NAME`
+   - `CLOUDINARY_API_KEY`
+   - `CLOUDINARY_API_SECRET`
+4. Set your Discord app redirect URI to:
+   `https://your-project.vercel.app/api/auth/discord/callback`
+5. Deploy — Vercel automatically uses the `vercel-build` script (`vite build`).
 
-The site now stores portfolio JSON and upload images through Netlify asset storage, so admin edits are visible globally.
+Portfolio data and uploaded images are stored via Cloudinary.
+
+## Project Structure
+
+```
+api/              # Vercel serverless functions (.cjs)
+  auth/           # Discord OAuth endpoints
+  lib/            # Shared helpers (Cloudinary, session signing)
+  portfolio.cjs   # GET/POST portfolio data
+  upload.cjs      # Image upload to Cloudinary
+  blob.cjs        # Image redirect via Cloudinary URL
+src/              # React frontend (Vite + Tailwind CSS v4)
+  components/
+    PortfolioView.tsx   # Public portfolio page
+    AdminView.tsx       # Admin panel (Discord-auth gated)
+data/
+  portfolio.json  # Local fallback portfolio data
+```
