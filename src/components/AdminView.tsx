@@ -524,7 +524,16 @@ export default function AdminView({ data, onSave, onNavigateToPortfolio, saving 
               name: String(fieldName)
             })
           });
-          if (!res.ok) throw new Error("Upload handler on express backend failed!");
+          if (!res.ok) {
+            let errorMsg = `Upload failed with status ${res.status}`;
+            try {
+              const errorJson = await res.json();
+              errorMsg = errorJson.error || errorMsg;
+            } catch (parseErr) {
+              // Use default error message if response isn't JSON
+            }
+            throw new Error(errorMsg);
+          }
           
           const result = await res.json();
           const targetUrl = result.url;
@@ -558,7 +567,8 @@ export default function AdminView({ data, onSave, onNavigateToPortfolio, saving 
           setUploadProgress(null);
         } catch (uploadErr) {
           console.error("Backend binary save failed:", uploadErr);
-          alert("File transfer connection failed. Keep values within constraints.");
+          const errorMessage = uploadErr instanceof Error ? uploadErr.message : "File transfer failed. Please try again.";
+          alert(errorMessage);
           setUploadProgress(null);
         }
       };
