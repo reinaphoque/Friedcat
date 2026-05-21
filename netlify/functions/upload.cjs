@@ -19,12 +19,23 @@ const handler = async (event) => {
       return createJsonResponse(400, { error: "No image payload present." });
     }
 
+    // Validate that image is a valid data URL
+    if (typeof image !== "string" || !image.startsWith("data:")) {
+      return createJsonResponse(400, { error: "Invalid image format. Must be a data URL." });
+    }
+
     connectBlobs(event);
     const asset = await uploadBase64Image(image, name || "upload");
+    console.log("Image uploaded successfully:", { key: asset.key, contentType: asset.contentType });
     return createJsonResponse(200, { url: `/api/blob?key=${encodeURIComponent(asset.key)}` });
   } catch (error) {
-    console.error("Upload function error:", error);
-    return createJsonResponse(500, { error: error.message || "Could not save uploaded image." });
+    console.error("Upload function error:", {
+      message: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
+    });
+    const errorMsg = error.message || "Could not save uploaded image.";
+    return createJsonResponse(500, { error: errorMsg });
   }
 };
 

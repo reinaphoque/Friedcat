@@ -70,14 +70,34 @@ const uploadBase64Image = async (base64String, namePrefix = "upload") => {
   const contentType = match[1];
   const data = match[2];
   const buffer = Buffer.from(data, "base64");
+  
+  // Validate file size (limit to 50MB for safety)
+  const MAX_SIZE_MB = 50;
+  const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
+  if (buffer.length > MAX_SIZE_BYTES) {
+    throw new Error(`Image file too large (${(buffer.length / 1024 / 1024).toFixed(2)}MB). Maximum is ${MAX_SIZE_MB}MB.`);
+  }
+  
   const extension = contentType.split("/")[1] || "png";
   const cleaned = String(namePrefix).replace(/[^a-zA-Z0-9_-]/g, "_");
   const key = `uploads/${cleaned}_${Date.now()}.${extension}`;
   const store = getBlobStore();
   
-  // Store the buffer directly - Node.js Buffer is a Uint8Array subclass
-  // and Netlify Blobs accepts both Uint8Array and ArrayBuffer
-  await store.set(key, new Uint8Array(buffer), { metadata: { contentType } });
+  // Convert to Uint8Array for Netlify Blobs API compatibility
+  const uint8Array = new Uint8Array(buffer);
+  
+  try {
+    await store.set(key, uint8Array, { metadata: { contentType } });
+  } catch (blobError) {
+    console.error("Netlify Blobs store.set() failed:", {
+      key,
+      bufferSize: buffer.length,
+      uint8ArraySize: uint8Array.byteLength,
+      error: blobError.message
+    });
+    throw new Error(`Failed to store image in Netlify Blobs: ${blobError.message}`);
+  }
+  
   return { key, contentType };
 };
 
