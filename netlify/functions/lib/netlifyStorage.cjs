@@ -4,13 +4,23 @@ const { connectLambda, getStore } = require("@netlify/blobs");
 const { ensureAuth, ensureSiteId, urlBase } = require("./netlifyHelpers.cjs");
 
 const STORE_NAME = "portfolio-store";
-const DEFAULT_PORTFOLIO_PATH = path.join(__dirname, "defaultPortfolio.json");
 let DEFAULT_PORTFOLIO = {};
+
 try {
-  DEFAULT_PORTFOLIO = JSON.parse(fs.readFileSync(DEFAULT_PORTFOLIO_PATH, "utf8"));
+  // Try to require the JSON file directly (works better in Lambda runtime)
+  DEFAULT_PORTFOLIO = require("./defaultPortfolio.json");
 } catch (err) {
-  console.error("Failed to load default portfolio fallback:", err);
-  DEFAULT_PORTFOLIO = {};
+  console.error("Failed to load default portfolio fallback via require:", err.message);
+  try {
+    // Fallback: try reading the file directly
+    const DEFAULT_PORTFOLIO_PATH = path.join(__dirname, "defaultPortfolio.json");
+    DEFAULT_PORTFOLIO = JSON.parse(fs.readFileSync(DEFAULT_PORTFOLIO_PATH, "utf8"));
+    console.log("Loaded default portfolio via fs.readFileSync from:", DEFAULT_PORTFOLIO_PATH);
+  } catch (fsErr) {
+    console.error("Failed to load default portfolio via fs.readFileSync:", fsErr.message);
+    // Last resort: empty object, will rely on Netlify Blobs
+    DEFAULT_PORTFOLIO = {};
+  }
 }
 
 const connectBlobs = (event) => {
