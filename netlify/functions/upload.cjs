@@ -1,5 +1,5 @@
 const { createJsonResponse } = require("./lib/netlifyHelpers.cjs");
-const { connectBlobs, uploadBase64Image } = require("./lib/netlifyStorage.cjs");
+const { connectBlobs, uploadBase64Image, getBlobStore } = require("./lib/netlifyStorage.cjs");
 const { verifySession } = require("./lib/netlifyHelpers.cjs");
 
 const handler = async (event) => {
@@ -32,25 +32,54 @@ const handler = async (event) => {
       return createJsonResponse(400, { error: "Invalid request body. Must be valid JSON." });
     }
 
-    const { image, name } = payload;
+        const { image, name, oldKey } = payload;
     if (!image) {
       return createJsonResponse(400, { error: "No image payload present." });
     }
 
-    // Validate that image is a valid data URL
-    if (typeof image !== "string" || !image.startsWith("data:")) {
-      return createJsonResponse(400, { error: "Invalid image format. Must be a data URL." });
+    // Validate that image is a valid data URL with proper image MIME type
+    if (typeof image !== "string") {
+      return createJsonResponse(400, { error: "Invalid image format. Must be a string data URL." });
+    }
+    
+    // Strict validation: must match data:image/type;base64,xxxxx pattern
+    const dataUrlPattern = /^data:image\/[a-zA-Z0-9.+-]+;base64,/;
+    if (!dataUrlPattern.test(image)) {
+      return createJsonResponse(400, { error: "Invalid image format. Must be base64 encoded image data URL (e.g., data:image/jpeg;base64,...)." });
     }
 
     console.log("Attempting to connect Netlify Blobs...");
     try {
       connectBlobs(event);
-      console.log("Netlify Blobs connected, uploading image...");
+// ลบรูปเก่าถ้ามี
+if (oldKey) {
+  try {
+    const store = getBlobStore();
+    await store.delete(oldKey);
+    console.log("Deleted old image:", oldKey);
+  } catch (delErr) {
+    console.log("Could not delete old image:", delErr.message);
+  }
+}
+      console.log("Netlify Blobs connected successfully, proceading with upload...");
     } catch (blobConnErr) {
-      console.error("Blobs connection failed:", blobConnErr.message);
+      console.error("❌ Blobs connection failed - check NETLIFY_SITE_ID & NETLIFY_AUTH_TOKEN:", {
+        message: blobConnErr.message,
+        isAuthError: blobConnErr.message.includes("Missing")
+      });
       throw blobConnErr;
     }
-    const asset = await uploadBase64Image(image, name || "upload");
+    
+    let asset;
+    try {
+      asset = await uploadBase64Image(image, name || "upload");
+    } catch (uploadErr) {
+      console.error("❌ Image upload to Netlify Blobs failed:", {
+        message: uploadErr.message,
+        cause: uploadErr.cause?.message || "Unknown"
+      });
+      throw uploadErr;
+    }
     const elapsed = Date.now() - startTime;
     console.log("Image uploaded successfully", {
       key: asset.key,

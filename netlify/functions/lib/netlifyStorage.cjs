@@ -31,10 +31,23 @@ const connectBlobs = (event) => {
     if (typeof connectLambda !== "function") {
       throw new Error("connectLambda function not available from @netlify/blobs");
     }
+    // Verify required env vars BEFORE attempting connection
+    const token = getNetlifyToken();
+    const siteId = getSiteId();
+    if (!token) {
+      throw new Error("NETLIFY_AUTH_TOKEN not set - cannot connect to Blobs API");
+    }
+    if (!siteId) {
+      throw new Error("NETLIFY_SITE_ID not set - cannot connect to Blobs API");
+    }
     connectLambda(event);
-    console.log("Netlify Blobs connection established via connectLambda");
+    console.log("✅ Netlify Blobs connection established (Lambda context initialized)");
   } catch (err) {
-    console.error("Failed to connect Netlify Blobs:", err.message);
+    console.error("❌ Failed to connect Netlify Blobs:", {
+      message: err.message,
+      hasToken: !!getNetlifyToken(),
+      hasSiteId: !!getSiteId()
+    });
     throw err;
   }
 };
@@ -88,38 +101,79 @@ const savePortfolioData = async (payload) => {
 };
 
 const uploadBase64Image = async (base64String, namePrefix = "upload") => {
-  const match = base64String.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.*)$/);
+  // Strict validation of data URL format
+  const match = base64String.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
   if (!match) {
-    throw new Error("Invalid base64 image payload.");
+    throw new Error("Invalid base64 image payload. Must match: data:image/type;base64,<data>");
   }
 
   const contentType = match[1];
   const data = match[2];
-  const buffer = Buffer.from(data, "base64");
+  
+  // Validate base64 data is not empty
+  if (!data || data.trim().length === 0) {
+    throw new Error("Base64 image data is empty.");
+  }
+  
+  let buffer;
+  try {
+    buffer = Buffer.from(data, "base64");
+  } catch (decodeErr) {
+    throw new Error(`Failed to decode base64 image data: ${decodeErr.message}`);
+  }
   
   // Validate file size (limit to 50MB for safety)
   const MAX_SIZE_MB = 50;
   const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
   if (buffer.length > MAX_SIZE_BYTES) {
-    throw new Error(`Image file too large (${(buffer.length / 1024 / 1024).toFixed(2)}MB). Maximum is ${MAX_SIZE_MB}MB.`);
+    const sizeMB = (buffer.length / 1024 / 1024).toFixed(2);
+    throw new Error(`Image file too large: ${sizeMB}MB exceeds ${MAX_SIZE_MB}MB limit.`);
   }
   
-  const extension = contentType.split("/")[1] || "png";
+  console.log("📦 Image validation passed", {
+    size: `${(buffer.length / 1024).toFixed(2)}KB`,
+    contentType,
+    maxSize: `${MAX_SIZE_MB}MB`
+  });
+  
+  // Extract file extension from MIME type
+  const mimeType = contentType.split("/");
+  if (mimeType.length !== 2 || !mimeType[1]) {
+    throw new Error(`Invalid MIME type format: ${contentType}`);
+  }
+  const extension = mimeType[1].split("+")[0].split(";")[0] || "bin";
+  
   const cleaned = String(namePrefix).replace(/[^a-zA-Z0-9_-]/g, "_");
   const key = `uploads/${cleaned}_${Date.now()}.${extension}`;
-  const store = getBlobStore();
+  
+  let store;
+  try {
+    store = getBlobStore();
+  } catch (storeErr) {
+    console.error("❌ Failed to get Netlify Blobs store:", {
+      message: storeErr.message,
+      envCheck: {
+        hasAuth: !!getNetlifyToken(),
+        hasSiteId: !!getSiteId()
+      }
+    });
+    throw storeErr;
+  }
   
   // Convert to Uint8Array for Netlify Blobs API compatibility
   const uint8Array = new Uint8Array(buffer);
   
   try {
+    console.log("🚀 Uploading to Netlify Blobs:", { key, size: buffer.length, contentType });
     await store.set(key, uint8Array, { metadata: { contentType } });
+    console.log("✅ Image stored successfully in Netlify Blobs");
   } catch (blobError) {
-    console.error("Netlify Blobs store.set() failed:", {
+    console.error("❌ Netlify Blobs store.set() failed:", {
       key,
       bufferSize: buffer.length,
       uint8ArraySize: uint8Array.byteLength,
-      error: blobError.message
+      errorMessage: blobError.message,
+      errorCode: blobError.code
     });
     throw new Error(`Failed to store image in Netlify Blobs: ${blobError.message}`);
   }
