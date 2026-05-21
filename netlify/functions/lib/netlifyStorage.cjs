@@ -180,7 +180,10 @@ const uploadBase64Image = async (base64String, namePrefix = "upload") => {
   
   return { key, contentType };
 };
-
+const deleteImage = async (key) => {
+  const store = getBlobStore();
+  await store.delete(key);
+};
 module.exports = {
   connectBlobs,
   getPortfolioData,

@@ -1,6 +1,5 @@
-const { createJsonResponse } = require("./lib/netlifyHelpers.cjs");
-const { connectBlobs, uploadBase64Image, getBlobStore } = require("./lib/netlifyStorage.cjs");
-const { verifySession } = require("./lib/netlifyHelpers.cjs");
+const { connectBlobs, uploadBase64Image, deleteImage } = require("./lib/netlifyStorage.cjs");
+const { createJsonResponse, verifySession } = require("./lib/netlifyHelpers.cjs");
 
 const handler = async (event) => {
   const startTime = Date.now();
@@ -54,9 +53,7 @@ const handler = async (event) => {
 // ลบรูปเก่าถ้ามี
 if (oldKey) {
   try {
-    const { getStore } = require("@netlify/blobs");
-const store = getStore("portfolio");
-    await store.delete(oldKey);
+    await deleteImage(oldKey);
     console.log("Deleted old image:", oldKey);
   } catch (delErr) {
     console.log("Could not delete old image:", delErr.message);
