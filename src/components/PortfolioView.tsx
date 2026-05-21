@@ -77,15 +77,15 @@ export default function PortfolioView({ data, loading, onNavigateToAdmin }: Port
   }
 
   // Helper to format status tag classes
-  const getStatusBadgeClass = (status: "open" | "limited" | "closed" | string) => {
-    const s = status.toLowerCase();
+  const getStatusBadgeClass = (status?: "open" | "limited" | "closed" | string) => {
+    const s = String(status || "").toLowerCase();
     if (s === "open") return "bg-[#d4f0d4] border-[#7bc97b] text-[#2a6a2a]";
     if (s === "closed" || s === "close") return "bg-[#f0d4d4] border-[#c97b7b] text-[#6a2a2a]";
     return "bg-[#fff3cd] border-[#f0b429] text-[#7a5000]";
   };
 
-  const getStatusLabel = (status: string) => {
-    const s = status.toLowerCase();
+  const getStatusLabel = (status?: string) => {
+    const s = String(status || "").toLowerCase();
     if (s === "open") return "Open";
     if (s === "closed" || s === "close") return "Closed";
     return "Limited";
@@ -94,8 +94,8 @@ export default function PortfolioView({ data, loading, onNavigateToAdmin }: Port
   // Carousel controls for Illustration section (maximum 5 slides allowed)
   const slides = (data.illustSlides || []).slice(0, 5);
 
-  const getSocialIcon = (title: string) => {
-    const t = title.toLowerCase();
+  const getSocialIcon = (title?: string) => {
+    const t = String(title || "").toLowerCase();
     if (t.includes("bluesky") || t.includes("bsky") || t.includes("butterfly")) {
       return (
         <svg viewBox="0 0 16 16" className="w-5 h-5 text-white fill-current animate-fadeIn">

@@ -30,7 +30,14 @@ export default function App() {
         throw new Error(`Could not access portfolio API: ${response.status} ${response.statusText}`);
       }
       const fetchedJson = await response.json();
-      setData(fetchedJson);
+      setData((prev) => ({
+        ...prev,
+        ...fetchedJson,
+        imageStyles: {
+          ...(prev?.imageStyles || {}),
+          ...(fetchedJson.imageStyles || {}),
+        },
+      }));
     } catch (err) {
       console.error("Database connection failed:", err);
       // Keep the local fallback portfolio data so the page still renders.

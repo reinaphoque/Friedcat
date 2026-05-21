@@ -30,13 +30,30 @@ const getBlobStore = () => {
   });
 };
 
+const mergePortfolioData = (defaults, payload) => {
+  if (payload === null || payload === undefined) {
+    return defaults;
+  }
+  if (Array.isArray(defaults)) {
+    return Array.isArray(payload) ? payload : defaults;
+  }
+  if (typeof defaults === "object" && defaults !== null) {
+    const merged = { ...defaults, ...payload };
+    for (const key of Object.keys(defaults)) {
+      merged[key] = mergePortfolioData(defaults[key], payload[key]);
+    }
+    return merged;
+  }
+  return payload === undefined ? defaults : payload;
+};
+
 const getPortfolioData = async () => {
   const store = getBlobStore();
   const data = await store.get("portfolio.json", { type: "json" });
   if (data === null) {
     return DEFAULT_PORTFOLIO;
   }
-  return data;
+  return mergePortfolioData(DEFAULT_PORTFOLIO, data);
 };
 
 const savePortfolioData = async (payload) => {
