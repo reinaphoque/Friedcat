@@ -23,6 +23,14 @@ import {
   MessageSquare
 } from "lucide-react";
 
+export const getContainerSizeStyle = (config?: ImageStyleConfig): React.CSSProperties => {
+  if (!config?.width && !config?.height) return {};
+  return {
+    ...(config.width ? { width: `${config.width}px` } : {}),
+    ...(config.height ? { height: `${config.height}px` } : {}),
+  };
+};
+
 export const getImageStyleHelper = (config?: ImageStyleConfig) => {
   if (!config) return { objectFit: "cover" as const, objectPosition: "center", transform: "none" };
   const scale = config.scale !== undefined ? config.scale : 100;
@@ -155,6 +163,51 @@ function ImageStyleSliders({ imageKey, draft, onChange }: {
         <p className="text-[8px] text-[#9b7060]/50 italic leading-none ml-auto">
           * Drag sliders to crop & center in real time.
         </p>
+      </div>
+
+      {/* CUSTOM FRAME SIZE */}
+      <div className="pt-2.5 border-t border-[#3d2018]">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-[9px] text-[#9b7060]/90 uppercase font-bold tracking-wider">Custom Frame Size</span>
+          {(styles.width || styles.height) && (
+            <button
+              type="button"
+              onClick={() => { onChange(imageKey, "width", undefined); onChange(imageKey, "height", undefined); }}
+              className="text-[8px] text-[#9b7060]/60 hover:text-[#d4704a] uppercase font-bold tracking-wider border border-[#3d2018] px-1.5 py-0.5 rounded cursor-pointer"
+            >
+              Reset
+            </button>
+          )}
+        </div>
+        <div className="flex gap-4 items-center flex-wrap">
+          <div className="flex items-center gap-1.5">
+            <label className="text-[9px] text-[#9b7060]/70 uppercase font-bold">W</label>
+            <input
+              type="number"
+              min="50"
+              max="800"
+              placeholder="auto"
+              value={styles.width ?? ""}
+              onChange={(e) => onChange(imageKey, "width", e.target.value ? parseInt(e.target.value) : undefined)}
+              className="w-16 bg-[#23140e] border border-[#3d2018] text-[#f5ede0] text-[10px] font-mono px-2 py-1 rounded focus:outline-none focus:border-[#d4704a]"
+            />
+            <span className="text-[9px] text-[#9b7060]/50">px</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <label className="text-[9px] text-[#9b7060]/70 uppercase font-bold">H</label>
+            <input
+              type="number"
+              min="50"
+              max="800"
+              placeholder="auto"
+              value={styles.height ?? ""}
+              onChange={(e) => onChange(imageKey, "height", e.target.value ? parseInt(e.target.value) : undefined)}
+              className="w-16 bg-[#23140e] border border-[#3d2018] text-[#f5ede0] text-[10px] font-mono px-2 py-1 rounded focus:outline-none focus:border-[#d4704a]"
+            />
+            <span className="text-[9px] text-[#9b7060]/50">px</span>
+          </div>
+          <p className="text-[8px] text-[#9b7060]/50 italic">Leave blank for default size.</p>
+        </div>
       </div>
     </div>
   );
@@ -503,78 +556,62 @@ export default function AdminView({ data, onSave, onNavigateToPortfolio, saving 
     }
   };
 
-  // Safe file uploader helper invoking express upload endpoint
+  // Safe file uploader — sends raw binary directly to Cloudinary via API, no base64 on client
   const onFileSelected = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: keyof PortfolioData, index?: number, subfield?: string) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setUploadProgress(`Uploading ${file.name}...`);
     try {
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        try {
-          const res = await fetch("/api/upload", {
-            method: "POST",
-            headers: { 
-              "Content-Type": "application/json",
-              "X-Admin-Token": adminToken || ""
-            },
-            body: JSON.stringify({
-              image: reader.result,
-              name: String(fieldName)
-            })
-          });
-          if (!res.ok) {
-            let errorMsg = `Upload failed with status ${res.status}`;
-            try {
-              const errorJson = await res.json();
-              errorMsg = errorJson.error || errorMsg;
-            } catch (parseErr) {
-              // Use default error message if response isn't JSON
-            }
-            throw new Error(errorMsg);
-          }
-          
-          const result = await res.json();
-          const targetUrl = result.url;
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: {
+          "Content-Type": file.type || "image/jpeg",
+          "X-Admin-Token": adminToken || "",
+          "X-File-Name": encodeURIComponent(String(fieldName))
+        },
+        body: file
+      });
 
-          if (index !== undefined && subfield) {
-            // Updating a sub-collection object array
-            if (fieldName === "ychItems") {
-              const currentArr = [...(draft.ychItems || [])];
-              currentArr[index] = { ...currentArr[index], [subfield]: targetUrl };
-              updateDraft("ychItems", currentArr);
-            }
-          } else if (index !== undefined) {
-            // Updating standard array strings like slides or examples
-            if (fieldName === "illustSlides") {
-              const currentArr = [...(draft.illustSlides || [])];
-              currentArr[index] = targetUrl;
-              updateDraft("illustSlides", currentArr);
-            } else if (fieldName === "illustExamples") {
-              const currentArr = [...(draft.illustExamples || [])];
-              currentArr[index] = targetUrl;
-              updateDraft("illustExamples", currentArr);
-            } else if (fieldName === "ychExamples") {
-              const currentArr = [...(draft.ychExamples || [])];
-              currentArr[index] = targetUrl;
-              updateDraft("ychExamples", currentArr);
-            }
-          } else {
-            // Standard single string field uploader values
-            updateDraft(fieldName, targetUrl);
-          }
-          setUploadProgress(null);
-        } catch (uploadErr) {
-          console.error("Backend binary save failed:", uploadErr);
-          const errorMessage = uploadErr instanceof Error ? uploadErr.message : "File transfer failed. Please try again.";
-          alert(errorMessage);
-          setUploadProgress(null);
+      if (!res.ok) {
+        let errorMsg = `Upload failed with status ${res.status}`;
+        try {
+          const errorJson = await res.json();
+          errorMsg = errorJson.error || errorMsg;
+        } catch (_) {}
+        throw new Error(errorMsg);
+      }
+
+      const result = await res.json();
+      const targetUrl = result.url;
+
+      if (index !== undefined && subfield) {
+        if (fieldName === "ychItems") {
+          const currentArr = [...(draft.ychItems || [])];
+          currentArr[index] = { ...currentArr[index], [subfield]: targetUrl };
+          updateDraft("ychItems", currentArr);
         }
-      };
-      reader.readAsDataURL(file);
+      } else if (index !== undefined) {
+        if (fieldName === "illustSlides") {
+          const currentArr = [...(draft.illustSlides || [])];
+          currentArr[index] = targetUrl;
+          updateDraft("illustSlides", currentArr);
+        } else if (fieldName === "illustExamples") {
+          const currentArr = [...(draft.illustExamples || [])];
+          currentArr[index] = targetUrl;
+          updateDraft("illustExamples", currentArr);
+        } else if (fieldName === "ychExamples") {
+          const currentArr = [...(draft.ychExamples || [])];
+          currentArr[index] = targetUrl;
+          updateDraft("ychExamples", currentArr);
+        }
+      } else {
+        updateDraft(fieldName, targetUrl);
+      }
+      setUploadProgress(null);
     } catch (err) {
-      console.error("FileReader failed:", err);
+      console.error("Upload failed:", err);
+      alert(err instanceof Error ? err.message : "File transfer failed. Please try again.");
       setUploadProgress(null);
     }
   };

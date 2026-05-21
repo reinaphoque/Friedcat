@@ -1,13 +1,6 @@
 const { uploadBase64Image } = require('./lib/cloudinary.cjs');
 const { createJsonResponse, verifySession } = require('./lib/helpers.cjs');
 
-const collectBody = (req) => new Promise((resolve, reject) => {
-  let data = '';
-  req.on('data', (chunk) => { data += chunk; });
-  req.on('end', () => resolve(data));
-  req.on('error', reject);
-});
-
 const cleanName = (name) => String(name || '').replace(/[^a-zA-Z0-9_-]/g, '_').replace(/^_+|_+$/g, '').slice(0, 200) || null;
 
 module.exports = async (req, res) => {
@@ -23,22 +16,32 @@ module.exports = async (req, res) => {
       if (!session) return createJsonResponse(res, 401, { error: 'Unauthorized upload.' });
     }
 
-    const rawBody = req.body || await collectBody(req);
-    let payload;
-    try {
-      payload = typeof rawBody === 'object' ? rawBody : JSON.parse(rawBody || '{}');
-    } catch (err) {
-      return createJsonResponse(res, 400, { error: 'Invalid JSON body.' });
+    const contentType = req.headers['content-type'] || '';
+    if (!contentType.startsWith('image/')) {
+      return createJsonResponse(res, 400, { error: 'Expected image content type (image/*).' });
     }
 
-    const { image, name } = payload;
-    if (!image) return createJsonResponse(res, 400, { error: 'No image payload present.' });
+    // Collect raw binary body (no base64 conversion on the client side)
+    const chunks = [];
+    await new Promise((resolve, reject) => {
+      req.on('data', chunk => chunks.push(chunk));
+      req.on('end', resolve);
+      req.on('error', reject);
+    });
+    const buffer = Buffer.concat(chunks);
 
-    const cleaned = cleanName(name) || null;
+    if (!buffer.length) return createJsonResponse(res, 400, { error: 'No file data received.' });
+
+    const rawName = req.headers['x-file-name'] ? decodeURIComponent(req.headers['x-file-name']) : '';
+    const cleaned = cleanName(rawName) || null;
     const publicId = cleaned || `upload_${Date.now()}`;
 
-    const asset = await uploadBase64Image(image, publicId);
-    return createJsonResponse(res, 200, { url: `/api/blob?key=${encodeURIComponent(asset.public_id)}`, cloudinary: asset });
+    // Convert buffer to data URL for Cloudinary uploader
+    const dataUrl = `data:${contentType};base64,${buffer.toString('base64')}`;
+    const asset = await uploadBase64Image(dataUrl, publicId);
+
+    // Return the actual Cloudinary CDN URL — no proxy needed
+    return createJsonResponse(res, 200, { url: asset.url });
   } catch (err) {
     console.error('upload error', err);
     return createJsonResponse(res, 500, { error: err.message || 'Upload failed' });

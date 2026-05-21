@@ -66,5 +66,7 @@ export interface ImageStyleConfig {
   posX?: number;      // focus position X offset (default 50%)
   posY?: number;      // focus position Y offset (default 50%)
   fit?: "cover" | "contain";
+  width?: number;     // custom frame width in px (overrides default container size)
+  height?: number;    // custom frame height in px (overrides default container size)
 }
 

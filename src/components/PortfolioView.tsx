@@ -17,6 +17,14 @@ import {
   MessageSquare
 } from "lucide-react";
 
+export const getContainerSizeStyle = (config?: ImageStyleConfig): React.CSSProperties => {
+  if (!config?.width && !config?.height) return {};
+  return {
+    ...(config.width ? { width: `${config.width}px` } : {}),
+    ...(config.height ? { height: `${config.height}px` } : {}),
+  };
+};
+
 export const getImageStyleHelper = (config?: ImageStyleConfig) => {
   if (!config) return { objectFit: "cover" as const, objectPosition: "center", transform: "none" };
   const scale = config.scale !== undefined ? config.scale : 100;
@@ -209,7 +217,10 @@ export default function PortfolioView({ data, loading, onNavigateToAdmin }: Port
               
               <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start text-center sm:text-left flex-1">
                 {/* Profile Avatar wrap (Squirclish / soft corner of image) - Enlarged per user request */}
-                <div className="shrink-0 w-32 h-32 sm:w-40 sm:h-40 bg-brand-red rounded-[2.2rem] overflow-hidden border-4 border-brand-red shadow-md flex items-center justify-center relative">
+                <div
+                  className={`shrink-0 bg-brand-red rounded-[2.2rem] overflow-hidden border-4 border-brand-red shadow-md flex items-center justify-center relative ${!data.imageStyles?.avatarImg?.width && !data.imageStyles?.avatarImg?.height ? "w-32 h-32 sm:w-40 sm:h-40" : ""}`}
+                  style={getContainerSizeStyle(data.imageStyles?.avatarImg)}
+                >
                   {data.avatarImg ? (
                     <img
                       src={data.avatarImg}
@@ -545,7 +556,7 @@ export default function PortfolioView({ data, loading, onNavigateToAdmin }: Port
                     <div
                       onClick={() => ych.image && setSelectedYchImage(ych.image)}
                       className={`shrink-0 bg-brand-cream border-[3px] border-brand-border rounded-2xl overflow-hidden shadow-md flex items-center justify-center relative hover:scale-[1.03] transition-transform duration-300 group/ychimg ${ych.image ? 'cursor-zoom-in' : ''}`}
-                      style={{ width: "220px", height: "220px" }}
+                      style={{ width: data.imageStyles?.[`ych_${idx}`]?.width ? `${data.imageStyles[`ych_${idx}`].width}px` : "220px", height: data.imageStyles?.[`ych_${idx}`]?.height ? `${data.imageStyles[`ych_${idx}`].height}px` : "220px" }}
                     >
                       {ych.image ? (
                         <>
@@ -643,11 +654,14 @@ export default function PortfolioView({ data, loading, onNavigateToAdmin }: Port
                 
                 {/* LEFT SIDEBAR COLUMN: Major Avatar image with striped hand-drawn dividers */}
                 <div className="space-y-3">
-                  <div className="w-full h-[400px] md:h-[530px] border-[3px] border-brand-red rounded-2xl bg-brand-cream overflow-hidden shadow-sm relative flex items-center justify-center transition-all hover:shadow-md">
+                  <div
+                    className={`border-[3px] border-brand-red rounded-2xl bg-brand-cream overflow-hidden shadow-sm relative flex items-center justify-center transition-all hover:shadow-md ${!data.imageStyles?.vtuberMainImg?.width && !data.imageStyles?.vtuberMainImg?.height ? "w-full h-[400px] md:h-[530px]" : "w-full"}`}
+                    style={getContainerSizeStyle(data.imageStyles?.vtuberMainImg)}
+                  >
                     {data.vtuberMainImg ? (
-                      <img 
-                        src={data.vtuberMainImg} 
-                        alt="Live2D Commission Show" 
+                      <img
+                        src={data.vtuberMainImg}
+                        alt="Live2D Commission Show"
                         className="w-full h-full"
                         style={getImageStyleHelper(data.imageStyles?.vtuberMainImg)}
                         referrerPolicy="no-referrer"

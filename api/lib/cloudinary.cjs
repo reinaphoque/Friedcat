@@ -7,11 +7,12 @@ const uploadBase64Image = async (base64String, publicId, folder = 'portfolio') =
   if (!base64String || typeof base64String !== 'string') {
     throw new Error('Invalid base64 image payload');
   }
+  // Do not pass `folder` in opts — it would be prepended to public_id, causing a double-folder path.
+  // The folder is already embedded in public_id (e.g. "portfolio/avatar").
   const opts = {
     public_id: publicId ? `${folder}/${publicId}` : undefined,
     overwrite: true,
     invalidate: true,
-    folder,
   };
   const result = await cloudinary.uploader.upload(base64String, opts);
   return {
@@ -23,13 +24,12 @@ const uploadBase64Image = async (base64String, publicId, folder = 'portfolio') =
 
 const uploadRawJson = async (jsonString, publicId = 'portfolio', folder = 'portfolio') => {
   const dataUri = `data:application/json;base64,${Buffer.from(jsonString, 'utf8').toString('base64')}`;
+  // Do not pass `folder` or `format` in opts — they conflict with the folder already in public_id.
   const opts = {
     resource_type: 'raw',
     public_id: `${folder}/${publicId}`,
     overwrite: true,
     invalidate: true,
-    folder,
-    format: 'json',
   };
   const result = await cloudinary.uploader.upload(dataUri, opts);
   return { public_id: result.public_id, url: result.secure_url };
