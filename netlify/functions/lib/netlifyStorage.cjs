@@ -74,8 +74,10 @@ const uploadBase64Image = async (base64String, namePrefix = "upload") => {
   const cleaned = String(namePrefix).replace(/[^a-zA-Z0-9_-]/g, "_");
   const key = `uploads/${cleaned}_${Date.now()}.${extension}`;
   const store = getBlobStore();
-  const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
-  await store.set(key, arrayBuffer, { metadata: { contentType } });
+  
+  // Store the buffer directly - Node.js Buffer is a Uint8Array subclass
+  // and Netlify Blobs accepts both Uint8Array and ArrayBuffer
+  await store.set(key, new Uint8Array(buffer), { metadata: { contentType } });
   return { key, contentType };
 };
 
