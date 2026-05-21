@@ -1,8 +1,8 @@
 const path = require("path");
 const fs = require("fs");
 const { connectLambda, getStore } = require("@netlify/blobs");
-const { ensureAuth, ensureSiteId, urlBase } = require("./netlifyHelpers.cjs");
 
+const { ensureAuth, ensureSiteId, urlBase, getNetlifyToken, getSiteId } = require("./netlifyHelpers.cjs");
 const STORE_NAME = "portfolio-store";
 let DEFAULT_PORTFOLIO = {};
 
