@@ -54,7 +54,8 @@ const handler = async (event) => {
 // ลบรูปเก่าถ้ามี
 if (oldKey) {
   try {
-    const store = getBlobStore();
+    const { getStore } = require("@netlify/blobs");
+const store = getStore("portfolio");
     await store.delete(oldKey);
     console.log("Deleted old image:", oldKey);
   } catch (delErr) {
