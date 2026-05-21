@@ -3,7 +3,14 @@ const { connectBlobs, uploadBase64Image } = require("./lib/netlifyStorage.cjs");
 const { verifySession } = require("./lib/netlifyHelpers.cjs");
 
 const handler = async (event) => {
+  const startTime = Date.now();
   try {
+    console.log("Upload function invoked", {
+      method: event.httpMethod,
+      bodyLength: event.body?.length || 0,
+      timestamp: new Date().toISOString()
+    });
+
     const requiresAuth = !!(process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET);
     if (requiresAuth) {
       const token = event.headers["x-admin-token"] || event.headers["authorization"];
@@ -13,7 +20,14 @@ const handler = async (event) => {
       }
     }
 
-    const payload = JSON.parse(event.body || "{}");
+    let payload;
+    try {
+      payload = JSON.parse(event.body || "{}");
+    } catch (parseErr) {
+      console.error("Failed to parse request body:", parseErr.message);
+      return createJsonResponse(400, { error: "Invalid request body. Must be valid JSON." });
+    }
+
     const { image, name } = payload;
     if (!image) {
       return createJsonResponse(400, { error: "No image payload present." });
@@ -24,14 +38,23 @@ const handler = async (event) => {
       return createJsonResponse(400, { error: "Invalid image format. Must be a data URL." });
     }
 
+    console.log("Attempting to connect Netlify Blobs...");
     connectBlobs(event);
+    console.log("Netlify Blobs connected, uploading image...");
     const asset = await uploadBase64Image(image, name || "upload");
-    console.log("Image uploaded successfully:", { key: asset.key, contentType: asset.contentType });
+    const elapsed = Date.now() - startTime;
+    console.log("Image uploaded successfully", {
+      key: asset.key,
+      contentType: asset.contentType,
+      elapsedMs: elapsed
+    });
     return createJsonResponse(200, { url: `/api/blob?key=${encodeURIComponent(asset.key)}` });
   } catch (error) {
-    console.error("Upload function error:", {
+    const elapsed = Date.now() - startTime;
+    console.error("Upload function error", {
       message: error.message,
       stack: error.stack,
+      elapsedMs: elapsed,
       timestamp: new Date().toISOString()
     });
     const errorMsg = error.message || "Could not save uploaded image.";

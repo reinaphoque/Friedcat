@@ -14,20 +14,36 @@ try {
 }
 
 const connectBlobs = (event) => {
-  if (event && typeof connectLambda === "function") {
+  try {
+    if (!event) {
+      throw new Error("Event object is required for Netlify Blobs connection");
+    }
+    if (typeof connectLambda !== "function") {
+      throw new Error("connectLambda function not available from @netlify/blobs");
+    }
     connectLambda(event);
+    console.log("Netlify Blobs connection established via connectLambda");
+  } catch (err) {
+    console.error("Failed to connect Netlify Blobs:", err.message);
+    throw err;
   }
 };
 
 const getBlobStore = () => {
-  const siteID = ensureSiteId();
-  const token = ensureAuth();
-  return getStore({
-    name: STORE_NAME,
-    siteID,
-    token,
-    apiURL: urlBase,
-  });
+  try {
+    const siteID = ensureSiteId();
+    const token = ensureAuth();
+    console.log("Creating Netlify Blobs store with siteID:", siteID?.slice(0, 8) + "...");
+    return getStore({
+      name: STORE_NAME,
+      siteID,
+      token,
+      apiURL: urlBase,
+    });
+  } catch (err) {
+    console.error("Failed to get Netlify Blobs store:", err.message);
+    throw err;
+  }
 };
 
 const mergePortfolioData = (defaults, payload) => {

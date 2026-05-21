@@ -14,6 +14,7 @@ const handler = async (event) => {
       return createJsonResponse(400, { error: "Missing blob key." });
     }
 
+    console.log("Blob GET request for key:", key?.slice(0, 20) + "...");
     connectLambda(event);
     const store = getStore({
       name: STORE_NAME,
@@ -24,10 +25,12 @@ const handler = async (event) => {
 
     const blob = await store.getWithMetadata(key, { type: "arrayBuffer" });
     if (!blob || blob.data == null) {
+      console.warn("Blob not found:", key);
       return createJsonResponse(404, { error: "Blob not found." });
     }
 
     const buffer = Buffer.from(blob.data);
+    console.log("Blob retrieved successfully, size:", buffer.length);
     return {
       statusCode: 200,
       headers: {
@@ -38,7 +41,11 @@ const handler = async (event) => {
       isBase64Encoded: true,
     };
   } catch (error) {
-    console.error("Blob function error:", error);
+    console.error("Blob function error:", {
+      message: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
+    });
     return createJsonResponse(500, { error: error.message || "Failed to load blob." });
   }
 };
