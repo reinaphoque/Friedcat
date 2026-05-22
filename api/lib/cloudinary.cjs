@@ -1,7 +1,12 @@
 const cloudinary = require('cloudinary').v2;
 
-cloudinary.config();
-cloudinary.config({ secure: true });
+// Explicitly configure from individual env vars (more reliable than relying on CLOUDINARY_URL auto-detection on Vercel).
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key:    process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure:     true,
+});
 
 const uploadBase64Image = async (base64String, publicId, folder = 'portfolio') => {
   if (!base64String || typeof base64String !== 'string') {

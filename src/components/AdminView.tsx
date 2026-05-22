@@ -15,7 +15,6 @@ import {
   FileText,
   ArrowLeft,
   Image,
-  CloudUpload,
   AlertCircle,
   Lock,
   LogIn,
@@ -46,6 +45,45 @@ function DimensionInput({ label, field, value, imageKey, onChange }: {
         className="w-16 bg-[#23140e] border border-[#3d2018] text-[#f5ede0] text-[10px] font-mono px-2 py-1 rounded focus:outline-none focus:border-[#d4704a]"
       />
       <span className="text-[9px] text-[#9b7060]/50">px</span>
+    </div>
+  );
+}
+
+/** URL input + live preview + Clear button — replaces file-upload inputs. */
+function ImageUrlInput({ value, onChange, placeholder = "Paste Cloudinary URL…" }: {
+  value: string;
+  onChange: (url: string) => void;
+  placeholder?: string;
+}) {
+  return (
+    <div className="space-y-2 w-full">
+      <div className="flex gap-2 items-center">
+        <input
+          type="url"
+          placeholder={placeholder}
+          value={value || ""}
+          onChange={(e) => onChange(e.target.value)}
+          className="flex-1 min-w-0 bg-[#1c1008] border border-[#3d2018] text-[#f5ede0] text-[11px] font-mono px-3 py-2 rounded-lg focus:outline-none focus:border-[#d4704a] placeholder:text-[#9b7060]/40"
+        />
+        {value && (
+          <button
+            type="button"
+            onClick={() => onChange("")}
+            className="shrink-0 px-2.5 py-2 text-[9px] font-black uppercase text-[#9b7060]/70 hover:text-[#f5ede0] border border-[#3d2018] hover:border-[#d4704a] rounded cursor-pointer transition-colors"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+      {value && (
+        <img
+          src={value}
+          alt="preview"
+          referrerPolicy="no-referrer"
+          className="w-full max-h-36 object-cover rounded-lg border border-[#3d2018]"
+          onError={(e) => { (e.target as HTMLImageElement).style.opacity = "0.25"; }}
+        />
+      )}
     </div>
   );
 }
@@ -193,7 +231,6 @@ export default function AdminView({ data, onSave, onNavigateToPortfolio, saving 
   // Create local draft copy of data so changes are safe until save is clicked
   const [draft, setDraft] = useState<PortfolioData | null>(data);
   const [localSaving, setLocalSaving] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<string | null>(null);
 
   // Authentication configuration and session state variables
   const [adminToken, setAdminToken] = useState<string | null>(() => localStorage.getItem("friedcat_admin_token"));
@@ -522,56 +559,6 @@ export default function AdminView({ data, onSave, onNavigateToPortfolio, saving 
     }
   };
 
-  // Safe file uploader — sends raw binary directly to Cloudinary via API, no base64 on client
-  const onFileSelected = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: keyof PortfolioData, index?: number, subfield?: string) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploadProgress(`Uploading ${file.name}...`);
-    try {
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        headers: {
-          "Content-Type": file.type || "image/jpeg",
-          "X-Admin-Token": adminToken || "",
-          "X-File-Name": encodeURIComponent(String(fieldName))
-        },
-        body: file
-      });
-
-      if (!res.ok) {
-        let errorMsg = `Upload failed with status ${res.status}`;
-        try {
-          const errorJson = await res.json();
-          errorMsg = errorJson.error || errorMsg;
-        } catch (_) {}
-        throw new Error(errorMsg);
-      }
-
-      const result = await res.json();
-      const targetUrl = result.url;
-
-      if (index !== undefined && subfield) {
-        // Object-array field (e.g. ychItems[n].image)
-        const currentArr = [...((draft[fieldName] as any[]) || [])];
-        currentArr[index] = { ...currentArr[index], [subfield]: targetUrl };
-        updateDraft(fieldName, currentArr);
-      } else if (index !== undefined) {
-        // String-array field (illustSlides, illustExamples, ychExamples)
-        const key = fieldName as "illustSlides" | "illustExamples" | "ychExamples";
-        const currentArr = [...((draft[key] as string[]) || [])];
-        currentArr[index] = targetUrl;
-        updateDraft(key, currentArr);
-      } else {
-        updateDraft(fieldName, targetUrl);
-      }
-      setUploadProgress(null);
-    } catch (err) {
-      console.error("Upload failed:", err);
-      alert(err instanceof Error ? err.message : "File transfer failed. Please try again.");
-      setUploadProgress(null);
-    }
-  };
 
   // Actions for Social Items
   const handleSocialChange = (index: number, field: keyof SocialItem, value: string) => {
@@ -675,14 +662,6 @@ export default function AdminView({ data, onSave, onNavigateToPortfolio, saving 
   return (
     <div id="admin_control_dashboard" className="w-full flex flex-col md:flex-row min-h-[90vh] bg-[#180e0c] text-[#f5ede0] rounded-2xl border-2 border-[#3d2018] overflow-hidden shadow-2xl relative">
       
-      {/* Upload progress message */}
-      {uploadProgress && (
-        <div className="fixed top-4 right-4 bg-brand-red-soft text-white px-5 py-3 rounded-lg z-50 flex items-center gap-3 shadow-lg">
-          <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
-          <span className="text-xs font-bold uppercase tracking-wider">{uploadProgress}</span>
-        </div>
-      )}
-
       {/* SIDEBAR: Admin Menu Guides */}
       <div className="w-full md:w-[200px] bg-[#211410] border-r border-[#3d2018] flex flex-col justify-between shrink-0">
         <div className="p-4 space-y-4">
@@ -901,19 +880,8 @@ export default function AdminView({ data, onSave, onNavigateToPortfolio, saving 
                     )}
                   </div>
                   <div className="flex-1 space-y-1">
-                    <label className="text-[10px] text-[#9b7060] uppercase font-bold tracking-wider block">Upload Profile Photo</label>
-                    <div className="relative inline-block w-full">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => onFileSelected(e, "avatarImg")}
-                        className="hidden"
-                        id="avatar-upload-file"
-                      />
-                      <label htmlFor="avatar-upload-file" className="px-4 py-3 bg-[#1c1008] hover:bg-[#321e16] border border-[#3d2018] rounded-lg flex items-center gap-2 justify-center text-xs font-bold cursor-pointer text-[#d4704a]">
-                        <CloudUpload className="w-4 h-4" /> Pick Avatar Mascot Image
-                      </label>
-                    </div>
+                    <label className="text-[10px] text-[#9b7060] uppercase font-bold tracking-wider block">Avatar Image URL</label>
+                    <ImageUrlInput value={draft.avatarImg || ""} onChange={(url) => updateDraft("avatarImg", url)} />
                   </div>
                 </div>
                 {draft.avatarImg && (
@@ -940,10 +908,7 @@ export default function AdminView({ data, onSave, onNavigateToPortfolio, saving 
                         <span className="text-2xl">&#127912;</span>
                       )}
                     </div>
-                    <input type="file" accept="image/*" id="illust-card-file" className="hidden" onChange={(e) => onFileSelected(e, "svcIllustThumb")} />
-                    <label htmlFor="illust-card-file" className="px-3 py-2 bg-[#1c1008] hover:bg-[#321e16] border border-[#3d2018] rounded-lg flex items-center gap-1.5 justify-center text-[11px] font-bold cursor-pointer text-[#d4704a]">
-                      <CloudUpload className="w-3.5 h-3.5" /> Upload Cover
-                    </label>
+                    <ImageUrlInput value={draft.svcIllustThumb || ""} onChange={(url) => updateDraft("svcIllustThumb", url)} />
                     {draft.svcIllustThumb && (
                       <ImageStyleSliders imageKey="svcIllustThumb" draft={draft} onChange={updateImageStyle} />
                     )}
@@ -963,10 +928,7 @@ export default function AdminView({ data, onSave, onNavigateToPortfolio, saving 
                         <span className="text-2xl">&#127912;</span>
                       )}
                     </div>
-                    <input type="file" accept="image/*" id="ych-card-file" className="hidden" onChange={(e) => onFileSelected(e, "svcYchThumb")} />
-                    <label htmlFor="ych-card-file" className="px-3 py-2 bg-[#1c1008] hover:bg-[#321e16] border border-[#3d2018] rounded-lg flex items-center gap-1.5 justify-center text-[11px] font-bold cursor-pointer text-[#d4704a]">
-                      <CloudUpload className="w-3.5 h-3.5" /> Upload Cover
-                    </label>
+                    <ImageUrlInput value={draft.svcYchThumb || ""} onChange={(url) => updateDraft("svcYchThumb", url)} />
                     {draft.svcYchThumb && (
                       <ImageStyleSliders imageKey="svcYchThumb" draft={draft} onChange={updateImageStyle} />
                     )}
@@ -1201,16 +1163,12 @@ export default function AdminView({ data, onSave, onNavigateToPortfolio, saving 
                         )}
                       </div>
                       
-                      <input
-                        type="file"
-                        accept="image/*"
-                        id={`illust-slide-file-${idx}`}
-                        className="hidden"
-                        onChange={(e) => onFileSelected(e, "illustSlides", idx)}
-                      />
-                      <label htmlFor={`illust-slide-file-${idx}`} className="flex-1 bg-[#1c1008] hover:bg-[#321e16] border border-[#3d2018] px-3 py-2 text-xs font-semibold rounded cursor-pointer text-[#d4704a] text-center">
-                        {slide ? "Change Slide Photo" : "Upload Slide Photo"}
-                      </label>
+                      <div className="flex-1">
+                        <ImageUrlInput
+                          value={slide || ""}
+                          onChange={(url) => { const a = [...(draft.illustSlides || [])]; a[idx] = url; updateDraft("illustSlides", a); }}
+                        />
+                      </div>
 
                       <button
                         type="button"
@@ -1297,16 +1255,12 @@ export default function AdminView({ data, onSave, onNavigateToPortfolio, saving 
                         )}
                       </div>
                       
-                      <input
-                        type="file"
-                        accept="image/*"
-                        id={`illust-ex-file-${idx}`}
-                        className="hidden"
-                        onChange={(e) => onFileSelected(e, "illustExamples", idx)}
-                      />
-                      <label htmlFor={`illust-ex-file-${idx}`} className="flex-1 bg-[#1c1008] hover:bg-[#321e16] border border-[#3d2018] px-3 py-2 text-xs font-semibold rounded cursor-pointer text-[#d4704a]">
-                        {src ? "Replace Showcase Artwork" : "Upload Artwork"}
-                      </label>
+                      <div className="flex-1">
+                        <ImageUrlInput
+                          value={src || ""}
+                          onChange={(url) => { const a = [...(draft.illustExamples || [])]; a[idx] = url; updateDraft("illustExamples", a); }}
+                        />
+                      </div>
 
                       <button
                         type="button"
@@ -1407,16 +1361,12 @@ export default function AdminView({ data, onSave, onNavigateToPortfolio, saving 
                             )}
                           </div>
                           
-                          <input
-                            type="file"
-                            accept="image/*"
-                            id={`ych-item-file-${idx}`}
-                            className="hidden"
-                            onChange={(e) => onFileSelected(e, "ychItems", idx, "image")}
-                          />
-                          <label htmlFor={`ych-item-file-${idx}`} className="flex-1 bg-[#180e0c] hover:bg-[#2c1a14] border border-[#3d2018] px-3 py-1.5 text-xs font-semibold rounded text-center cursor-pointer text-[#d4704a]">
-                            Replace image
-                          </label>
+                          <div className="flex-1">
+                            <ImageUrlInput
+                              value={ych.image || ""}
+                              onChange={(url) => handleYchItemChange(idx, "image", url)}
+                            />
+                          </div>
                         </div>
                       </div>
 
@@ -1448,16 +1398,12 @@ export default function AdminView({ data, onSave, onNavigateToPortfolio, saving 
                         )}
                       </div>
                       
-                      <input
-                        type="file"
-                        accept="image/*"
-                        id={`ych-ex-file-${idx}`}
-                        className="hidden"
-                        onChange={(e) => onFileSelected(e, "ychExamples", idx)}
-                      />
-                      <label htmlFor={`ych-ex-file-${idx}`} className="flex-1 bg-[#1c1008] hover:bg-[#321e16] border border-[#3d2018] px-3 py-2 text-xs font-semibold rounded cursor-pointer text-[#d4704a]">
-                        {src ? "Replace Artwork" : "Upload Artwork Example"}
-                      </label>
+                      <div className="flex-1">
+                        <ImageUrlInput
+                          value={src || ""}
+                          onChange={(url) => { const a = [...(draft.ychExamples || [])]; a[idx] = url; updateDraft("ychExamples", a); }}
+                        />
+                      </div>
 
                       <button
                         type="button"
@@ -1663,19 +1609,8 @@ export default function AdminView({ data, onSave, onNavigateToPortfolio, saving 
                       )}
                     </div>
                     <div className="flex-1 space-y-1">
-                      <label className="text-[10px] text-[#9b7060] uppercase font-bold tracking-wider block">Main Column Showcase Image</label>
-                      <div className="relative inline-block w-full">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => onFileSelected(e, "vtuberMainImg")}
-                          className="hidden"
-                          id="vtuber-main-upload"
-                        />
-                        <label htmlFor="vtuber-main-upload" className="px-4 py-2.5 bg-[#1c1008] hover:bg-[#321e16] border border-[#3d2018] rounded-lg flex items-center gap-2 justify-center text-xs font-bold cursor-pointer text-[#d4704a]">
-                          <CloudUpload className="w-4 h-4" /> Upload Cover Showcase
-                        </label>
-                      </div>
+                      <label className="text-[10px] text-[#9b7060] uppercase font-bold tracking-wider block">Main Column Showcase Image URL</label>
+                      <ImageUrlInput value={draft.vtuberMainImg || ""} onChange={(url) => updateDraft("vtuberMainImg", url)} />
                     </div>
                   </div>
                   {draft.vtuberMainImg && (
@@ -1704,17 +1639,8 @@ export default function AdminView({ data, onSave, onNavigateToPortfolio, saving 
                           <span className="text-sm">&#127912;</span>
                         )}
                       </div>
-                      <div className="relative flex-1">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => onFileSelected(e, "vtuberExample1")}
-                          className="hidden"
-                          id="vtuber-ex1-upload"
-                        />
-                        <label htmlFor="vtuber-ex1-upload" className="px-3 py-2 bg-[#1c1008] hover:bg-[#321e16] border border-[#3d2018] rounded-lg flex items-center gap-1.5 justify-center text-[10px] font-bold cursor-pointer text-[#d4704a]">
-                          <CloudUpload className="w-3.5 h-3.5" /> Upload Left Ex
-                        </label>
+                      <div className="flex-1">
+                        <ImageUrlInput value={draft.vtuberExample1 || ""} onChange={(url) => updateDraft("vtuberExample1", url)} />
                       </div>
                     </div>
                     {draft.vtuberExample1 && (
@@ -1739,17 +1665,8 @@ export default function AdminView({ data, onSave, onNavigateToPortfolio, saving 
                           <span className="text-sm">&#127912;</span>
                         )}
                       </div>
-                      <div className="relative flex-1">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => onFileSelected(e, "vtuberExample2")}
-                          className="hidden"
-                          id="vtuber-ex2-upload"
-                        />
-                        <label htmlFor="vtuber-ex2-upload" className="px-3 py-2 bg-[#1c1008] hover:bg-[#321e16] border border-[#3d2018] rounded-lg flex items-center gap-1.5 justify-center text-[10px] font-bold cursor-pointer text-[#d4704a]">
-                          <CloudUpload className="w-3.5 h-3.5" /> Upload Right Ex
-                        </label>
+                      <div className="flex-1">
+                        <ImageUrlInput value={draft.vtuberExample2 || ""} onChange={(url) => updateDraft("vtuberExample2", url)} />
                       </div>
                     </div>
                     {draft.vtuberExample2 && (

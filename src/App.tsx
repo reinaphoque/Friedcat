@@ -96,7 +96,9 @@ export default function App() {
         body: JSON.stringify(newData)
       });
       if (!response.ok) {
-        throw new Error("Persist portfolio failed");
+        let errMsg = `Save failed (${response.status})`;
+        try { const e = await response.json(); errMsg = e.error || errMsg; } catch (_) {}
+        throw new Error(errMsg);
       }
       const resJson = await response.json();
       if (resJson.success) {
@@ -105,7 +107,7 @@ export default function App() {
       }
     } catch (err) {
       console.error("Save failed:", err);
-      alert("Database error: Could not save settings.");
+      alert(`Could not save: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setSaving(false);
     }
