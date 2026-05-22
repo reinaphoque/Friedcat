@@ -57,10 +57,32 @@ const verifySession = (token) => {
   return data;
 };
 
+/** Reads the admin token from either the X-Admin-Token or Authorization header. */
+const extractToken = (req) => req.headers['x-admin-token'] || req.headers['authorization'] || null;
+
+/** Collects a text body from a Node.js IncomingMessage stream. */
+const collectBody = (req) => new Promise((resolve, reject) => {
+  let data = '';
+  req.on('data', chunk => { data += chunk; });
+  req.on('end', () => resolve(data));
+  req.on('error', reject);
+});
+
+/** Collects a binary body from a Node.js IncomingMessage stream. */
+const collectBinaryBody = (req) => new Promise((resolve, reject) => {
+  const chunks = [];
+  req.on('data', chunk => chunks.push(chunk));
+  req.on('end', () => resolve(Buffer.concat(chunks)));
+  req.on('error', reject);
+});
+
 module.exports = {
   getAppUrl,
   createJsonResponse,
   createHtmlResponse,
   signSession,
   verifySession,
+  extractToken,
+  collectBody,
+  collectBinaryBody,
 };

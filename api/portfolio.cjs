@@ -1,12 +1,5 @@
 const { getRawResourceUrl, uploadRawJson } = require('./lib/cloudinary.cjs');
-const { createJsonResponse, verifySession } = require('./lib/helpers.cjs');
-
-const collectBody = (req) => new Promise((resolve, reject) => {
-  let data = '';
-  req.on('data', (chunk) => { data += chunk; });
-  req.on('end', () => resolve(data));
-  req.on('error', reject);
-});
+const { createJsonResponse, verifySession, extractToken, collectBody } = require('./lib/helpers.cjs');
 
 module.exports = async (req, res) => {
   try {
@@ -22,7 +15,7 @@ module.exports = async (req, res) => {
     if (req.method === 'POST') {
       const requiresAuth = !!(process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET);
       if (requiresAuth) {
-        const token = req.headers['x-admin-token'] || req.headers['authorization'];
+        const token = extractToken(req);
         const session = verifySession(token);
         if (!session) return createJsonResponse(res, 401, { error: 'Unauthorized: Missing or invalid administrator token.' });
       }

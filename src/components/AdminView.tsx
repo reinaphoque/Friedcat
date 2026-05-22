@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { PortfolioData, SocialItem, IllustRow, YchItem, ImageStyleConfig } from "../types";
-import { 
-  User, 
-  Settings, 
-  Heart, 
-  Trash2, 
-  Plus, 
-  Globe, 
-  Sparkles, 
-  Save, 
-  HelpCircle, 
-  Check, 
-  FileText, 
+import { getContainerSizeStyle, getImageStyleHelper } from "../imageStyleUtils";
+import {
+  User,
+  Settings,
+  Heart,
+  Trash2,
+  Plus,
+  Globe,
+  Sparkles,
+  Save,
+  HelpCircle,
+  Check,
+  FileText,
   ArrowLeft,
   Image,
   CloudUpload,
@@ -23,42 +24,31 @@ import {
   MessageSquare
 } from "lucide-react";
 
-export const getContainerSizeStyle = (config?: ImageStyleConfig): React.CSSProperties => {
-  if (!config?.width && !config?.height) return {};
-  return {
-    ...(config.width ? { width: `${config.width}px` } : {}),
-    ...(config.height ? { height: `${config.height}px` } : {}),
-  };
-};
+export { getContainerSizeStyle, getImageStyleHelper };
 
-export const getImageStyleHelper = (config?: ImageStyleConfig) => {
-  if (!config) return { objectFit: "cover" as const, objectPosition: "center", transform: "none" };
-  const scale = config.scale !== undefined ? config.scale : 100;
-  const posX = config.posX !== undefined ? config.posX : 50;
-  const posY = config.posY !== undefined ? config.posY : 50;
-  const fit = config.fit || "cover";
-
-  if (fit === "contain") {
-    return {
-      objectFit: "contain" as const,
-      objectPosition: "center center",
-      transform: `scale(${scale / 100})`,
-      transformOrigin: "center center",
-    };
-  }
-
-  const scaleVal = scale / 100;
-  // Calculate relative translations based on object scale factor to allow panning along both axes
-  const tx = scaleVal > 1 ? -(posX - 50) * (scaleVal - 1) / scaleVal : 0;
-  const ty = scaleVal > 1 ? -(posY - 50) * (scaleVal - 1) / scaleVal : 0;
-
-  return {
-    objectFit: "cover" as const,
-    objectPosition: `${posX}% ${posY}%`,
-    transform: `scale(${scaleVal}) translate(${tx}%, ${ty}%)`,
-    transformOrigin: "center center",
-  };
-};
+function DimensionInput({ label, field, value, imageKey, onChange }: {
+  label: string;
+  field: "width" | "height";
+  value: number | undefined;
+  imageKey: string;
+  onChange: (imageKey: string, field: keyof ImageStyleConfig, value: number | undefined) => void;
+}) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <label className="text-[9px] text-[#9b7060]/70 uppercase font-bold">{label}</label>
+      <input
+        type="number"
+        min="50"
+        max="800"
+        placeholder="auto"
+        value={value ?? ""}
+        onChange={(e) => onChange(imageKey, field, e.target.value ? parseInt(e.target.value) : undefined)}
+        className="w-16 bg-[#23140e] border border-[#3d2018] text-[#f5ede0] text-[10px] font-mono px-2 py-1 rounded focus:outline-none focus:border-[#d4704a]"
+      />
+      <span className="text-[9px] text-[#9b7060]/50">px</span>
+    </div>
+  );
+}
 
 function ImageStyleSliders({ imageKey, draft, onChange }: { 
   imageKey: string; 
@@ -169,7 +159,7 @@ function ImageStyleSliders({ imageKey, draft, onChange }: {
       <div className="pt-2.5 border-t border-[#3d2018]">
         <div className="flex items-center gap-2 mb-2">
           <span className="text-[9px] text-[#9b7060]/90 uppercase font-bold tracking-wider">Custom Frame Size</span>
-          {(styles.width || styles.height) && (
+          {(styles.width != null || styles.height != null) && (
             <button
               type="button"
               onClick={() => { onChange(imageKey, "width", undefined); onChange(imageKey, "height", undefined); }}
@@ -180,32 +170,8 @@ function ImageStyleSliders({ imageKey, draft, onChange }: {
           )}
         </div>
         <div className="flex gap-4 items-center flex-wrap">
-          <div className="flex items-center gap-1.5">
-            <label className="text-[9px] text-[#9b7060]/70 uppercase font-bold">W</label>
-            <input
-              type="number"
-              min="50"
-              max="800"
-              placeholder="auto"
-              value={styles.width ?? ""}
-              onChange={(e) => onChange(imageKey, "width", e.target.value ? parseInt(e.target.value) : undefined)}
-              className="w-16 bg-[#23140e] border border-[#3d2018] text-[#f5ede0] text-[10px] font-mono px-2 py-1 rounded focus:outline-none focus:border-[#d4704a]"
-            />
-            <span className="text-[9px] text-[#9b7060]/50">px</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <label className="text-[9px] text-[#9b7060]/70 uppercase font-bold">H</label>
-            <input
-              type="number"
-              min="50"
-              max="800"
-              placeholder="auto"
-              value={styles.height ?? ""}
-              onChange={(e) => onChange(imageKey, "height", e.target.value ? parseInt(e.target.value) : undefined)}
-              className="w-16 bg-[#23140e] border border-[#3d2018] text-[#f5ede0] text-[10px] font-mono px-2 py-1 rounded focus:outline-none focus:border-[#d4704a]"
-            />
-            <span className="text-[9px] text-[#9b7060]/50">px</span>
-          </div>
+          <DimensionInput label="W" field="width" value={styles.width} imageKey={imageKey} onChange={onChange} />
+          <DimensionInput label="H" field="height" value={styles.height} imageKey={imageKey} onChange={onChange} />
           <p className="text-[8px] text-[#9b7060]/50 italic">Leave blank for default size.</p>
         </div>
       </div>
@@ -586,25 +552,16 @@ export default function AdminView({ data, onSave, onNavigateToPortfolio, saving 
       const targetUrl = result.url;
 
       if (index !== undefined && subfield) {
-        if (fieldName === "ychItems") {
-          const currentArr = [...(draft.ychItems || [])];
-          currentArr[index] = { ...currentArr[index], [subfield]: targetUrl };
-          updateDraft("ychItems", currentArr);
-        }
+        // Object-array field (e.g. ychItems[n].image)
+        const currentArr = [...((draft[fieldName] as any[]) || [])];
+        currentArr[index] = { ...currentArr[index], [subfield]: targetUrl };
+        updateDraft(fieldName, currentArr);
       } else if (index !== undefined) {
-        if (fieldName === "illustSlides") {
-          const currentArr = [...(draft.illustSlides || [])];
-          currentArr[index] = targetUrl;
-          updateDraft("illustSlides", currentArr);
-        } else if (fieldName === "illustExamples") {
-          const currentArr = [...(draft.illustExamples || [])];
-          currentArr[index] = targetUrl;
-          updateDraft("illustExamples", currentArr);
-        } else if (fieldName === "ychExamples") {
-          const currentArr = [...(draft.ychExamples || [])];
-          currentArr[index] = targetUrl;
-          updateDraft("ychExamples", currentArr);
-        }
+        // String-array field (illustSlides, illustExamples, ychExamples)
+        const key = fieldName as "illustSlides" | "illustExamples" | "ychExamples";
+        const currentArr = [...((draft[key] as string[]) || [])];
+        currentArr[index] = targetUrl;
+        updateDraft(key, currentArr);
       } else {
         updateDraft(fieldName, targetUrl);
       }

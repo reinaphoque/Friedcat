@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { PortfolioData, ImageStyleConfig } from "../types";
-import { 
-  Home, 
-  Palette, 
-  Star, 
-  FileText, 
+import { PortfolioData } from "../types";
+import { getContainerSizeStyle, getImageStyleHelper } from "../imageStyleUtils";
+import {
+  Home,
+  Palette,
+  Star,
+  FileText,
   ArrowUp,
   Twitter,
   Instagram,
@@ -17,42 +18,7 @@ import {
   MessageSquare
 } from "lucide-react";
 
-export const getContainerSizeStyle = (config?: ImageStyleConfig): React.CSSProperties => {
-  if (!config?.width && !config?.height) return {};
-  return {
-    ...(config.width ? { width: `${config.width}px` } : {}),
-    ...(config.height ? { height: `${config.height}px` } : {}),
-  };
-};
-
-export const getImageStyleHelper = (config?: ImageStyleConfig) => {
-  if (!config) return { objectFit: "cover" as const, objectPosition: "center", transform: "none" };
-  const scale = config.scale !== undefined ? config.scale : 100;
-  const posX = config.posX !== undefined ? config.posX : 50;
-  const posY = config.posY !== undefined ? config.posY : 50;
-  const fit = config.fit || "cover";
-
-  if (fit === "contain") {
-    return {
-      objectFit: "contain" as const,
-      objectPosition: "center center",
-      transform: `scale(${scale / 100})`,
-      transformOrigin: "center center",
-    };
-  }
-
-  const scaleVal = scale / 100;
-  // Calculate relative translations based on object scale factor to allow panning along both axes
-  const tx = scaleVal > 1 ? -(posX - 50) * (scaleVal - 1) / scaleVal : 0;
-  const ty = scaleVal > 1 ? -(posY - 50) * (scaleVal - 1) / scaleVal : 0;
-
-  return {
-    objectFit: "cover" as const,
-    objectPosition: `${posX}% ${posY}%`,
-    transform: `scale(${scaleVal}) translate(${tx}%, ${ty}%)`,
-    transformOrigin: "center center",
-  };
-};
+export { getContainerSizeStyle, getImageStyleHelper };
 
 interface PortfolioViewProps {
   data: PortfolioData | null;
@@ -556,7 +522,7 @@ export default function PortfolioView({ data, loading, onNavigateToAdmin }: Port
                     <div
                       onClick={() => ych.image && setSelectedYchImage(ych.image)}
                       className={`shrink-0 bg-brand-cream border-[3px] border-brand-border rounded-2xl overflow-hidden shadow-md flex items-center justify-center relative hover:scale-[1.03] transition-transform duration-300 group/ychimg ${ych.image ? 'cursor-zoom-in' : ''}`}
-                      style={{ width: data.imageStyles?.[`ych_${idx}`]?.width ? `${data.imageStyles[`ych_${idx}`].width}px` : "220px", height: data.imageStyles?.[`ych_${idx}`]?.height ? `${data.imageStyles[`ych_${idx}`].height}px` : "220px" }}
+                      style={{ width: "220px", height: "220px", ...getContainerSizeStyle(data.imageStyles?.[`ych_${idx}`]) }}
                     >
                       {ych.image ? (
                         <>
