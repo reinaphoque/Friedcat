@@ -117,15 +117,16 @@ module.exports = async (req, res) => {
     }
 
     const token = signSession({ id, username, avatar });
-    return createHtmlResponse(res, 200, renderHtml({
-      title: 'Authorized!',
-      message: `Successfully connected as ${username}. You may close this window.`,
-      body: postMessageScript({
-        type: 'OAUTH_AUTH_SUCCESS',
-        token,
-        user: { id, username, avatar },
-      })
-    }));
+    // Set short-lived cookies so the main window can read them after redirect.
+    // No cross-window JS communication needed — the browser carries the cookies.
+    const userJson = encodeURIComponent(JSON.stringify({ id, username, avatar }));
+    res.setHeader('Set-Cookie', [
+      `fc_token=${token}; Path=/; SameSite=Lax; Max-Age=120`,
+      `fc_user=${userJson}; Path=/; SameSite=Lax; Max-Age=120`,
+    ]);
+    res.setHeader('Location', `${appUrl}/#admin`);
+    res.statusCode = 302;
+    return res.end();
   } catch (err) {
     console.error('Auth callback exception:', err);
     return createHtmlResponse(res, 500, renderHtml({

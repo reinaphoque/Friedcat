@@ -249,6 +249,29 @@ export default function AdminView({ data, onSave, onNavigateToPortfolio, saving 
     allowedUsers: []
   });
 
+  // On mount: read token from cookie set by OAuth redirect callback
+  useEffect(() => {
+    const cookies = document.cookie.split(';').reduce<Record<string, string>>((acc, c) => {
+      const eq = c.indexOf('=');
+      if (eq > 0) acc[c.slice(0, eq).trim()] = decodeURIComponent(c.slice(eq + 1).trim());
+      return acc;
+    }, {});
+    const token = cookies['fc_token'];
+    const userStr = cookies['fc_user'];
+    if (token) {
+      // Consume the cookies immediately
+      document.cookie = 'fc_token=; Path=/; Max-Age=0';
+      document.cookie = 'fc_user=; Path=/; Max-Age=0';
+      try {
+        const user = userStr ? JSON.parse(userStr) : { id: 'admin', username: 'Admin', avatar: '' };
+        localStorage.setItem("friedcat_admin_token", token);
+        localStorage.setItem("friedcat_admin_user", JSON.stringify(user));
+        setAdminToken(token);
+        setAdminUser(user);
+      } catch (_) {}
+    }
+  }, []);
+
   // Query configuration and validate current cached token on mount
   useEffect(() => {
     const checkSessionAndConfig = async () => {
@@ -361,52 +384,9 @@ export default function AdminView({ data, onSave, onNavigateToPortfolio, saving 
       const res = await fetch("/api/auth/discord/url");
       if (!res.ok) throw new Error("Could not construct authorization URL on express backend server.");
       const { url } = await res.json();
-
-      // Clear any stale result before opening popup
-      localStorage.removeItem("friedcat_oauth_result");
-      localStorage.removeItem("friedcat_oauth_ts");
-
-      const width = 500;
-      const height = 650;
-      const left = window.screen.width / 2 - width / 2;
-      const top = window.screen.height / 2 - height / 2;
-      const authWindow = window.open(
-        url,
-        "oauth_popup",
-        `width=${width},height=${height},top=${top},left=${left},scrollbars=yes`
-      );
-
-      if (!authWindow) {
-        alert("Authentication popup blocked! Please allow popups for this site to access authorization flow.");
-        return;
-      }
-
-      // Poll localStorage every 500ms — reliable fallback when storage event doesn't fire
-      const poll = setInterval(() => {
-        const raw = localStorage.getItem("friedcat_oauth_result");
-        if (!raw) {
-          if (authWindow.closed) clearInterval(poll);
-          return;
-        }
-        clearInterval(poll);
-        localStorage.removeItem("friedcat_oauth_result");
-        localStorage.removeItem("friedcat_oauth_ts");
-        try {
-          const data = JSON.parse(raw);
-          if (data?.type === "OAUTH_AUTH_SUCCESS" && data.token && data.user) {
-            localStorage.setItem("friedcat_admin_token", data.token);
-            localStorage.setItem("friedcat_admin_user", JSON.stringify(data.user));
-            setAdminToken(data.token);
-            setAdminUser(data.user);
-            setAuthError(null);
-          } else if (data?.type === "OAUTH_AUTH_FAILURE") {
-            setAuthError(data.error || "Authentication denied.");
-          }
-        } catch (_) {}
-      }, 500);
-
-      // Auto-cleanup after 10 minutes
-      setTimeout(() => clearInterval(poll), 10 * 60 * 1000);
+      // Redirect the main window — callback will set cookies and redirect back to /#admin.
+      // No cross-window communication needed.
+      window.location.href = url;
     } catch (err: any) {
       setAuthError(err.message || "Failed to initiate Discord handshake flow.");
     }
