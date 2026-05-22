@@ -350,6 +350,10 @@ export default function AdminView({ data, onSave, onNavigateToPortfolio, saving 
       if (!res.ok) throw new Error("Could not construct authorization URL on express backend server.");
       const { url } = await res.json();
 
+      // Clear any stale result before opening popup
+      localStorage.removeItem("friedcat_oauth_result");
+      localStorage.removeItem("friedcat_oauth_ts");
+
       const width = 500;
       const height = 650;
       const left = window.screen.width / 2 - width / 2;
@@ -362,7 +366,35 @@ export default function AdminView({ data, onSave, onNavigateToPortfolio, saving 
 
       if (!authWindow) {
         alert("Authentication popup blocked! Please allow popups for this site to access authorization flow.");
+        return;
       }
+
+      // Poll localStorage every 500ms — reliable fallback when storage event doesn't fire
+      const poll = setInterval(() => {
+        const raw = localStorage.getItem("friedcat_oauth_result");
+        if (!raw) {
+          if (authWindow.closed) clearInterval(poll);
+          return;
+        }
+        clearInterval(poll);
+        localStorage.removeItem("friedcat_oauth_result");
+        localStorage.removeItem("friedcat_oauth_ts");
+        try {
+          const data = JSON.parse(raw);
+          if (data?.type === "OAUTH_AUTH_SUCCESS" && data.token && data.user) {
+            localStorage.setItem("friedcat_admin_token", data.token);
+            localStorage.setItem("friedcat_admin_user", JSON.stringify(data.user));
+            setAdminToken(data.token);
+            setAdminUser(data.user);
+            setAuthError(null);
+          } else if (data?.type === "OAUTH_AUTH_FAILURE") {
+            setAuthError(data.error || "Authentication denied.");
+          }
+        } catch (_) {}
+      }, 500);
+
+      // Auto-cleanup after 10 minutes
+      setTimeout(() => clearInterval(poll), 10 * 60 * 1000);
     } catch (err: any) {
       setAuthError(err.message || "Failed to initiate Discord handshake flow.");
     }
