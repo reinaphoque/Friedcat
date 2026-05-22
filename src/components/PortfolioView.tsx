@@ -300,12 +300,15 @@ export default function PortfolioView({ data, loading, onNavigateToAdmin }: Port
                   onClick={() => scrollToAnchor("illust-anchor")}
                   className="bg-white rounded-xl p-2.5 border-2 border-brand-border hover:border-brand-red cursor-pointer transition-all flex flex-col items-center shadow-sm"
                 >
-                  <div className="w-full aspect-video rounded-lg overflow-hidden border border-brand-border/40 bg-brand-cream flex items-center justify-center mb-2">
+                  <div
+                    className={`w-full ${!data.imageStyles?.svcIllustThumb?.width && !data.imageStyles?.svcIllustThumb?.height ? "aspect-video" : ""} rounded-lg overflow-hidden border border-brand-border/40 bg-brand-cream flex items-center justify-center mb-2`}
+                    style={getContainerSizeStyle(data.imageStyles?.svcIllustThumb)}
+                  >
                     {data.svcIllustThumb ? (
-                      <img 
-                        src={data.svcIllustThumb} 
-                        alt="Illust Card" 
-                        className="w-full h-full" 
+                      <img
+                        src={data.svcIllustThumb}
+                        alt="Illust Card"
+                        className="w-full h-full"
                         style={getImageStyleHelper(data.imageStyles?.svcIllustThumb)}
                       />
                     ) : (
@@ -319,12 +322,15 @@ export default function PortfolioView({ data, loading, onNavigateToAdmin }: Port
                   onClick={() => scrollToAnchor("ych-anchor")}
                   className="bg-white rounded-xl p-2.5 border-2 border-brand-border hover:border-brand-red cursor-pointer transition-all flex flex-col items-center shadow-sm"
                 >
-                  <div className="w-full aspect-video rounded-lg overflow-hidden border border-brand-border/40 bg-brand-cream flex items-center justify-center mb-2">
+                  <div
+                    className={`w-full ${!data.imageStyles?.svcYchThumb?.width && !data.imageStyles?.svcYchThumb?.height ? "aspect-video" : ""} rounded-lg overflow-hidden border border-brand-border/40 bg-brand-cream flex items-center justify-center mb-2`}
+                    style={getContainerSizeStyle(data.imageStyles?.svcYchThumb)}
+                  >
                     {data.svcYchThumb ? (
-                      <img 
-                        src={data.svcYchThumb} 
-                        alt="YCH Card" 
-                        className="w-full h-full" 
+                      <img
+                        src={data.svcYchThumb}
+                        alt="YCH Card"
+                        className="w-full h-full"
                         style={getImageStyleHelper(data.imageStyles?.svcYchThumb)}
                       />
                     ) : (
@@ -794,10 +800,13 @@ export default function PortfolioView({ data, loading, onNavigateToAdmin }: Port
 
                   <div className="grid grid-cols-2 gap-4">
                     {data.vtuberExample1 && (
-                      <div className="border-2 border-brand-red rounded-[2rem] bg-brand-cream overflow-hidden shadow-xs aspect-[2/3] sm:aspect-[3/5] relative flex items-center justify-center transition-all hover:shadow-md">
-                        <img 
-                          src={data.vtuberExample1} 
-                          alt="Vtuber Example Left" 
+                      <div
+                        className={`border-2 border-brand-red rounded-[2rem] bg-brand-cream overflow-hidden shadow-xs ${!data.imageStyles?.vtuberExample1?.width && !data.imageStyles?.vtuberExample1?.height ? "aspect-[2/3] sm:aspect-[3/5]" : ""} relative flex items-center justify-center transition-all hover:shadow-md`}
+                        style={getContainerSizeStyle(data.imageStyles?.vtuberExample1)}
+                      >
+                        <img
+                          src={data.vtuberExample1}
+                          alt="Vtuber Example Left"
                           className="w-full h-full"
                           style={getImageStyleHelper(data.imageStyles?.vtuberExample1)}
                           referrerPolicy="no-referrer"
@@ -806,10 +815,13 @@ export default function PortfolioView({ data, loading, onNavigateToAdmin }: Port
                     )}
 
                     {data.vtuberExample2 && (
-                      <div className="border-2 border-brand-red rounded-[2rem] bg-brand-cream overflow-hidden shadow-xs aspect-[2/3] sm:aspect-[3/5] relative flex items-center justify-center transition-all hover:shadow-md">
-                        <img 
-                          src={data.vtuberExample2} 
-                          alt="Vtuber Example Right" 
+                      <div
+                        className={`border-2 border-brand-red rounded-[2rem] bg-brand-cream overflow-hidden shadow-xs ${!data.imageStyles?.vtuberExample2?.width && !data.imageStyles?.vtuberExample2?.height ? "aspect-[2/3] sm:aspect-[3/5]" : ""} relative flex items-center justify-center transition-all hover:shadow-md`}
+                        style={getContainerSizeStyle(data.imageStyles?.vtuberExample2)}
+                      >
+                        <img
+                          src={data.vtuberExample2}
+                          alt="Vtuber Example Right"
                           className="w-full h-full"
                           style={getImageStyleHelper(data.imageStyles?.vtuberExample2)}
                           referrerPolicy="no-referrer"
