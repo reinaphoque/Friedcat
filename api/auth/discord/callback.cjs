@@ -32,19 +32,25 @@ const postMessageScript = (payload) => `
 <script>
   (function () {
     var p = ${JSON.stringify(payload)};
-    // Write to localStorage first — fires 'storage' event in the main window
-    // even when Discord's COOP header has severed window.opener.
+    // 1. BroadcastChannel — designed for cross-window same-origin messaging,
+    //    works even when COOP severs window.opener and storage events are unreliable.
+    try {
+      var bc = new BroadcastChannel('friedcat_auth');
+      bc.postMessage(p);
+      setTimeout(function () { bc.close(); }, 200);
+    } catch (e) {}
+    // 2. localStorage — polled by the main window every 500 ms as fallback.
     try {
       localStorage.setItem('friedcat_oauth_result', JSON.stringify(p));
       localStorage.setItem('friedcat_oauth_ts', String(Date.now()));
     } catch (e) {}
-    // Also attempt postMessage for environments where opener is still reachable.
+    // 3. postMessage — works when opener is not severed by COOP.
     try {
       if (window.opener && !window.opener.closed) {
         window.opener.postMessage(p, window.location.origin);
       }
     } catch (e) {}
-    setTimeout(function () { window.close(); }, 400);
+    setTimeout(function () { window.close(); }, 500);
   })();
 </script>`;
 

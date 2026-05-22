@@ -335,9 +335,21 @@ export default function AdminView({ data, onSave, onNavigateToPortfolio, saving 
       localStorage.removeItem("friedcat_oauth_ts");
     };
 
+    // BroadcastChannel — most reliable for same-origin cross-window messaging
+    let bc: BroadcastChannel | null = null;
+    try {
+      bc = new BroadcastChannel("friedcat_auth");
+      bc.onmessage = (event) => {
+        if (event.data?.type === "OAUTH_AUTH_SUCCESS" || event.data?.type === "OAUTH_AUTH_FAILURE") {
+          applyAuthResult(event.data);
+        }
+      };
+    } catch (_) {}
+
     window.addEventListener("message", handleAuthMessage);
     window.addEventListener("storage", handleStorageEvent);
     return () => {
+      bc?.close();
       window.removeEventListener("message", handleAuthMessage);
       window.removeEventListener("storage", handleStorageEvent);
     };
