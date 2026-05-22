@@ -244,7 +244,7 @@ export default function AdminView({ data, onSave, onNavigateToPortfolio, saving 
   });
   const [authChecking, setAuthChecking] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
-  const [discordConfig, setDiscordConfig] = useState<{ isConfigured: boolean; allowedUsers: string[] }>({
+  const [discordConfig, setDiscordConfig] = useState<{ isConfigured: boolean; allowedUsers: string[]; authCallbackOrigin?: string }>({
     isConfigured: false,
     allowedUsers: []
   });
@@ -289,13 +289,28 @@ export default function AdminView({ data, onSave, onNavigateToPortfolio, saving 
     checkSessionAndConfig();
   }, [adminToken]);
 
-  // Listen for callback postMessage transfers
+  // Listen for OAuth callback result via postMessage or localStorage storage event.
+  // Discord sets COOP headers that sever window.opener, so postMessage alone is unreliable.
+  // The callback page writes to localStorage first, which fires 'storage' in all same-origin
+  // windows regardless of browsing context group boundaries.
   useEffect(() => {
+    const applyAuthResult = (data: { type: string; token?: string; user?: { id: string; username: string; avatar: string }; error?: string }) => {
+      if (data?.type === "OAUTH_AUTH_SUCCESS" && data.token && data.user) {
+        localStorage.setItem("friedcat_admin_token", data.token);
+        localStorage.setItem("friedcat_admin_user", JSON.stringify(data.user));
+        setAdminToken(data.token);
+        setAdminUser(data.user);
+        setAuthError(null);
+      } else if (data?.type === "OAUTH_AUTH_FAILURE") {
+        setAuthError(data.error || "Authentication denied.");
+      }
+    };
+
+    // Primary: postMessage (works when opener is not severed)
     const handleAuthMessage = (event: MessageEvent) => {
       const origin = event.origin;
-      const currentOrigin = window.location.origin;
       if (
-        origin !== currentOrigin &&
+        origin !== window.location.origin &&
         !origin.endsWith(".run.app") &&
         !origin.endsWith(".netlify.app") &&
         !origin.includes("localhost") &&
@@ -303,21 +318,29 @@ export default function AdminView({ data, onSave, onNavigateToPortfolio, saving 
       ) {
         return;
       }
-
-      if (event.data?.type === "OAUTH_AUTH_SUCCESS") {
-        const { token, user } = event.data;
-        localStorage.setItem("friedcat_admin_token", token);
-        localStorage.setItem("friedcat_admin_user", JSON.stringify(user));
-        setAdminToken(token);
-        setAdminUser(user);
-        setAuthError(null);
-      } else if (event.data?.type === "OAUTH_AUTH_FAILURE") {
-        setAuthError(event.data.error || "Authentication denied.");
+      if (event.data?.type === "OAUTH_AUTH_SUCCESS" || event.data?.type === "OAUTH_AUTH_FAILURE") {
+        applyAuthResult(event.data);
       }
     };
 
+    // Fallback: localStorage storage event (fires even when COOP severs window.opener)
+    const handleStorageEvent = (event: StorageEvent) => {
+      if (event.key !== "friedcat_oauth_result" || !event.newValue) return;
+      try {
+        const data = JSON.parse(event.newValue);
+        applyAuthResult(data);
+      } catch (_) {}
+      // Consume the keys so stale results don't re-trigger on future page loads
+      localStorage.removeItem("friedcat_oauth_result");
+      localStorage.removeItem("friedcat_oauth_ts");
+    };
+
     window.addEventListener("message", handleAuthMessage);
-    return () => window.removeEventListener("message", handleAuthMessage);
+    window.addEventListener("storage", handleStorageEvent);
+    return () => {
+      window.removeEventListener("message", handleAuthMessage);
+      window.removeEventListener("storage", handleStorageEvent);
+    };
   }, []);
 
   const handleDiscordLogin = async () => {

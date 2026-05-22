@@ -118,7 +118,8 @@ async function startServer() {
       .filter(Boolean);
     return res.json({
       isConfigured,
-      allowedUsers: allowed
+      allowedUsers: allowed,
+      authCallbackOrigin: getAppUrl(req)
     });
   });
 

@@ -30,12 +30,22 @@ const getAllowedUsers = () => (process.env.DISCORD_ALLOWED_USERS || '')
 
 const postMessageScript = (payload) => `
 <script>
-  if (window.opener) {
-    window.opener.postMessage(${JSON.stringify(payload)}, '*');
-    window.close();
-  } else {
-    window.location.href = '/';
-  }
+  (function () {
+    var p = ${JSON.stringify(payload)};
+    // Write to localStorage first — fires 'storage' event in the main window
+    // even when Discord's COOP header has severed window.opener.
+    try {
+      localStorage.setItem('friedcat_oauth_result', JSON.stringify(p));
+      localStorage.setItem('friedcat_oauth_ts', String(Date.now()));
+    } catch (e) {}
+    // Also attempt postMessage for environments where opener is still reachable.
+    try {
+      if (window.opener && !window.opener.closed) {
+        window.opener.postMessage(p, window.location.origin);
+      }
+    } catch (e) {}
+    setTimeout(function () { window.close(); }, 400);
+  })();
 </script>`;
 
 module.exports = async (req, res) => {
